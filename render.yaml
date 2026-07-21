@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: zeus-dashboard
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DASHBOARD_TOKEN_SECRET
+        generateValue: true
+      - key: DASHBOARD_REQUIRE_TOKEN
+        value: "false"
+      - key: GHL_PRIVATE_TOKEN
+        sync: false
+      - key: GHL_LOCATION_ID
+        sync: false
+      - key: GHL_FIELD_REFERRED_BY
+        sync: false
+      - key: GHL_FIELD_AM_ID
+        sync: false
+      - key: GHL_FIELD_SAM_ID
+        sync: false
+      - key: GHL_FIELD_CAMPAIGN
+        sync: false
+      - key: GHL_FIELD_NET_BROKER_FEE
+        sync: false
+      - key: GHL_FUNDED_PIPELINE_ID
+        sync: false
+      - key: GHL_FUNDED_STAGE_NAMES
+        value: "funded,closed won,won"
+      - key: GHL_TIER_2_MARKERS
+        value: "tier 2,tier2,professional,paid"
+      - key: STALE_DEAL_DAYS
+        value: "21"
+      - key: ALLOWED_FRAME_ANCESTORS
+        value: "https://app.gohighlevel.com https://*.gohighlevel.com https://*.leadconnectorhq.com https://*.msgsndr.com"
