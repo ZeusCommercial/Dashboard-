@@ -42,6 +42,8 @@ export type Dataset = {
   affiliates: typeof MOCK_AFFILIATES;
   isMock: boolean;
   generatedAt: string;
+  pipelines: { id: string; name: string }[];
+  pipelineFilter: string | null;
 };
 
 export function loadDataset(): Dataset {
