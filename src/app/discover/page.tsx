@@ -3,9 +3,38 @@ import { getPipelines, getCustomFieldDefs, GhlError } from "@/lib/ghl";
 
 export const dynamic = "force-dynamic";
 
+const TOKEN = process.env.GHL_PRIVATE_TOKEN;
+const LOCATION_ID = process.env.GHL_LOCATION_ID;
+const GHL_BASE = "https://services.leadconnectorhq.com";
+const GHL_VERSION = "2021-07-28";
+
+async function probe(path: string, query?: Record<string, string>) {
+  const url = new URL(`${GHL_BASE}${path}`);
+  if (query) {
+    for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
+  }
+  try {
+    const res = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        Version: GHL_VERSION,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+    const text = await res.text();
+    return {
+      status: res.status,
+      ok: res.ok,
+      body: text.slice(0, 2500),
+    };
+  } catch (e) {
+    return { status: 0, ok: false, body: (e as Error).message };
+  }
+}
+
 export default async function DiscoverPage() {
-  const hasCredentials =
-    !!process.env.GHL_PRIVATE_TOKEN && !!process.env.GHL_LOCATION_ID;
+  const hasCredentials = !!TOKEN && !!LOCATION_ID;
 
   if (!hasCredentials) {
     return (
@@ -43,42 +72,66 @@ export default async function DiscoverPage() {
         : (e as Error).message;
   }
 
-  // Try to guess which fields match by name
-  const guess = (needle: string) =>
-    fields.find((f) =>
-      (f.name ?? "").toLowerCase().includes(needle.toLowerCase())
-    );
+  // Probe every plausible affiliate endpoint. GHL's affiliate API isn't in
+  // the public docs, so we try known paths and show what comes back.
+  const affiliateProbes = await Promise.all([
+    probe("/affiliates/campaigns", { locationId: LOCATION_ID! }),
+    probe("/affiliates/", { locationId: LOCATION_ID! }),
+    probe("/affiliate-managers/", { locationId: LOCATION_ID! }),
+    probe("/affiliate/campaigns", { locationId: LOCATION_ID! }),
+    probe("/affiliate/manager", { locationId: LOCATION_ID! }),
+    probe(`/locations/${LOCATION_ID}/affiliates`),
+    probe(`/locations/${LOCATION_ID}/affiliate-campaigns`),
+  ]);
 
-  const guessed = {
-    referredBy: guess("referred"),
-    amId: guess("am") ?? guess("affiliate manager"),
-    samId: guess("sam") ?? guess("sub"),
-    campaign: guess("campaign") ?? guess("tier"),
-    brokerFee: guess("broker") ?? guess("net fee"),
-  };
+  const probePaths = [
+    "/affiliates/campaigns",
+    "/affiliates/",
+    "/affiliate-managers/",
+    "/affiliate/campaigns",
+    "/affiliate/manager",
+    `/locations/${LOCATION_ID}/affiliates`,
+    `/locations/${LOCATION_ID}/affiliate-campaigns`,
+  ];
 
   return (
     <main className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl text-bright">
-          GHL Discovery
-        </h1>
+        <h1 className="font-display text-2xl text-bright">GHL Discovery</h1>
         <p className="mt-1 text-[13px] text-muted">
-          What Zeus's GHL location actually contains. Copy the IDs below into
-          Render's Environment tab.
+          Probes GHL to see what data is actually reachable with your token.
         </p>
       </div>
 
       <Card
-        title="Suggested Environment Variables"
-        subtitle="Best guess based on field names — verify against the full lists below"
+        title="Affiliate API Probes"
+        subtitle="Testing every plausible endpoint — one of these should return 200 with affiliate data"
       >
-        <div className="space-y-2 font-mono text-[12px]">
-          <EnvLine k="GHL_FIELD_REFERRED_BY" v={guessed.referredBy?.id} name={guessed.referredBy?.name} />
-          <EnvLine k="GHL_FIELD_AM_ID" v={guessed.amId?.id} name={guessed.amId?.name} />
-          <EnvLine k="GHL_FIELD_SAM_ID" v={guessed.samId?.id} name={guessed.samId?.name} />
-          <EnvLine k="GHL_FIELD_CAMPAIGN" v={guessed.campaign?.id} name={guessed.campaign?.name} />
-          <EnvLine k="GHL_FIELD_NET_BROKER_FEE" v={guessed.brokerFee?.id} name={guessed.brokerFee?.name} />
+        <div className="space-y-4">
+          {affiliateProbes.map((r, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-hairline bg-ink/40 p-3"
+            >
+              <div className="mb-2 flex items-baseline gap-3">
+                <code className="text-[12px] text-bright">{probePaths[i]}</code>
+                <span
+                  className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                    r.ok
+                      ? "bg-gain/15 text-gain"
+                      : r.status === 404
+                        ? "bg-muted/10 text-muted"
+                        : "bg-loss/15 text-loss"
+                  }`}
+                >
+                  {r.status} {r.ok ? "OK" : ""}
+                </span>
+              </div>
+              <pre className="max-h-52 overflow-auto whitespace-pre-wrap break-all rounded bg-ink p-2 text-[10px] leading-tight text-muted/80">
+                {r.body}
+              </pre>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -87,16 +140,11 @@ export default async function DiscoverPage() {
         subtitle={
           pipelineError
             ? `Error: ${pipelineError}`
-            : `${pipelines.length} pipeline(s) found — copy the ID of the one that holds funded deals`
+            : `${pipelines.length} pipeline(s) found`
         }
       >
         {pipelineError ? (
           <div className="text-[13px] text-loss/90">{pipelineError}</div>
-        ) : pipelines.length === 0 ? (
-          <div className="text-[13px] text-muted/70">
-            No pipelines returned. Check that the Private Integration token has
-            the <code>opportunities.readonly</code> scope.
-          </div>
         ) : (
           <div className="space-y-6">
             {pipelines.map((p) => (
@@ -152,31 +200,5 @@ export default async function DiscoverPage() {
         )}
       </Card>
     </main>
-  );
-}
-
-function EnvLine({
-  k,
-  v,
-  name,
-}: {
-  k: string;
-  v: string | undefined;
-  name: string | undefined;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-muted">{k}=</span>
-      {v ? (
-        <>
-          <code className="rounded bg-ink px-2 py-0.5 text-gold">{v}</code>
-          <span className="text-[11px] text-muted/60">({name})</span>
-        </>
-      ) : (
-        <span className="text-loss/80">
-          # no match found — check the Custom Fields list below
-        </span>
-      )}
-    </div>
   );
 }
