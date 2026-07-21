@@ -8,26 +8,29 @@ const LOCATION_ID = process.env.GHL_LOCATION_ID;
 const GHL_BASE = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 
-async function probe(path: string, query?: Record<string, string>) {
+async function ghlFetch(
+  method: "GET" | "POST",
+  path: string,
+  opts?: { query?: Record<string, string>; body?: unknown }
+) {
   const url = new URL(`${GHL_BASE}${path}`);
-  if (query) {
-    for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
+  if (opts?.query) {
+    for (const [k, v] of Object.entries(opts.query)) url.searchParams.set(k, v);
   }
   try {
     const res = await fetch(url.toString(), {
+      method,
       headers: {
         Authorization: `Bearer ${TOKEN}`,
         Version: GHL_VERSION,
         Accept: "application/json",
+        ...(opts?.body ? { "Content-Type": "application/json" } : {}),
       },
+      body: opts?.body ? JSON.stringify(opts.body) : undefined,
       cache: "no-store",
     });
     const text = await res.text();
-    return {
-      status: res.status,
-      ok: res.ok,
-      body: text.slice(0, 2500),
-    };
+    return { status: res.status, ok: res.ok, body: text };
   } catch (e) {
     return { status: 0, ok: false, body: (e as Error).message };
   }
@@ -72,67 +75,48 @@ export default async function DiscoverPage() {
         : (e as Error).message;
   }
 
-  // Probe every plausible affiliate endpoint. GHL's affiliate API isn't in
-  // the public docs, so we try known paths and show what comes back.
-  const affiliateProbes = await Promise.all([
-    probe("/affiliates/campaigns", { locationId: LOCATION_ID! }),
-    probe("/affiliates/", { locationId: LOCATION_ID! }),
-    probe("/affiliate-managers/", { locationId: LOCATION_ID! }),
-    probe("/affiliate/campaigns", { locationId: LOCATION_ID! }),
-    probe("/affiliate/manager", { locationId: LOCATION_ID! }),
-    probe(`/locations/${LOCATION_ID}/affiliates`),
-    probe(`/locations/${LOCATION_ID}/affiliate-campaigns`),
-  ]);
+  // Pull one real contact and dump the FULL JSON.
+  // We're hunting for the attribution/source object where am_id and sam_id land.
+  const contactSample = await ghlFetch("POST", "/contacts/search", {
+    body: {
+      locationId: LOCATION_ID!,
+      pageLimit: 3,
+    },
+  });
 
-  const probePaths = [
-    "/affiliates/campaigns",
-    "/affiliates/",
-    "/affiliate-managers/",
-    "/affiliate/campaigns",
-    "/affiliate/manager",
-    `/locations/${LOCATION_ID}/affiliates`,
-    `/locations/${LOCATION_ID}/affiliate-campaigns`,
-  ];
+  // Pull one opportunity too — see what shape opportunity custom fields have.
+  const opportunitySample = await ghlFetch("GET", "/opportunities/search", {
+    query: {
+      location_id: LOCATION_ID!,
+      limit: "1",
+    },
+  });
 
   return (
     <main className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-bright">GHL Discovery</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Probes GHL to see what data is actually reachable with your token.
+          Deep probes to find where attribution and affiliate data live.
         </p>
       </div>
 
       <Card
-        title="Affiliate API Probes"
-        subtitle="Testing every plausible endpoint — one of these should return 200 with affiliate data"
+        title="Contact Sample (3 real contacts, full JSON)"
+        subtitle={`Status: ${contactSample.status} — search for "am_id", "sam_id", "attribution", or "source" in the JSON below`}
       >
-        <div className="space-y-4">
-          {affiliateProbes.map((r, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-hairline bg-ink/40 p-3"
-            >
-              <div className="mb-2 flex items-baseline gap-3">
-                <code className="text-[12px] text-bright">{probePaths[i]}</code>
-                <span
-                  className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                    r.ok
-                      ? "bg-gain/15 text-gain"
-                      : r.status === 404
-                        ? "bg-muted/10 text-muted"
-                        : "bg-loss/15 text-loss"
-                  }`}
-                >
-                  {r.status} {r.ok ? "OK" : ""}
-                </span>
-              </div>
-              <pre className="max-h-52 overflow-auto whitespace-pre-wrap break-all rounded bg-ink p-2 text-[10px] leading-tight text-muted/80">
-                {r.body}
-              </pre>
-            </div>
-          ))}
-        </div>
+        <pre className="max-h-[500px] overflow-auto whitespace-pre-wrap break-all rounded bg-ink p-3 text-[10px] leading-tight text-muted/90">
+          {contactSample.body}
+        </pre>
+      </Card>
+
+      <Card
+        title="Opportunity Sample (1 real opportunity, full JSON)"
+        subtitle={`Status: ${opportunitySample.status} — check what custom fields flow through here`}
+      >
+        <pre className="max-h-[500px] overflow-auto whitespace-pre-wrap break-all rounded bg-ink p-3 text-[10px] leading-tight text-muted/90">
+          {opportunitySample.body}
+        </pre>
       </Card>
 
       <Card
