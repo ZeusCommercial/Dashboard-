@@ -15,6 +15,8 @@ import {
   getContacts,
   getOpportunities,
   getPipelines,
+  getVoiceAiCalls,
+  deriveVoiceOutcome,
   readCustomField,
   type GhlContact,
   type GhlOpportunity,
@@ -136,12 +138,14 @@ export async function loadLiveDataset(opts: {
   const { pipelineId } = opts;
 
   // Fetch in parallel — big time saver, especially on cold starts.
-  const [pipelines, opportunities, contacts, affiliates] = await Promise.all([
-    getPipelines(),
-    getOpportunities({ pipelineId: pipelineId ?? undefined, maxPages: 40 }),
-    getContacts({ maxPages: 40 }),
-    loadAffiliateRegistry(),
-  ]);
+  const [pipelines, opportunities, contacts, affiliates, voiceCalls] =
+    await Promise.all([
+      getPipelines(),
+      getOpportunities({ pipelineId: pipelineId ?? undefined, maxPages: 40 }),
+      getContacts({ maxPages: 40 }),
+      loadAffiliateRegistry(),
+      getVoiceAiCalls({ pageSize: 100, maxPages: 50 }),
+    ]);
 
   // Build a stage-id -> stage-name map across every pipeline. Opportunities
   // reference stage by ID, not name, so we resolve here.
@@ -171,22 +175,39 @@ export async function loadLiveDataset(opts: {
     };
   });
 
+  // Map Voice AI calls into the MockCall shape the AI Calls page consumes.
+  const calls: MockCall[] = voiceCalls.map((vc) => ({
+    id: vc.id,
+    contactId: vc.contactId ?? "unknown",
+    durationSec: vc.duration ?? 0,
+    outcome: deriveVoiceOutcome(vc),
+    createdAt: vc.createdAt ?? new Date().toISOString(),
+  }));
+
+  // Earliest call timestamp per contact → powers speed-to-lead + rapid response.
+  const firstCallByContact = new Map<string, string>();
+  for (const vc of voiceCalls) {
+    if (!vc.contactId || !vc.createdAt) continue;
+    const existing = firstCallByContact.get(vc.contactId);
+    if (!existing || vc.createdAt < existing) {
+      firstCallByContact.set(vc.contactId, vc.createdAt);
+    }
+  }
+
   // Contacts feed leads-over-time and speed-to-lead metrics.
   // Skip registry contacts — they're affiliates, not leads.
   const leadContacts: MockContact[] = contacts
-    .filter((c) => !(c.tags ?? []).map((t) => t.toLowerCase()).includes(AFFILIATE_REGISTRY_TAG))
+    .filter(
+      (c) =>
+        !(c.tags ?? [])
+          .map((t) => t.toLowerCase())
+          .includes(AFFILIATE_REGISTRY_TAG)
+    )
     .map((c) => ({
       id: c.id,
       createdAt: c.dateAdded ?? new Date().toISOString(),
-      // No call timing on the contact record itself — leave null; the AI Calls
-      // page will show "—" until we wire calls from conversations.
-      firstCallAt: null,
+      firstCallAt: firstCallByContact.get(c.id) ?? null,
     }));
-
-  // Calls: we'd pull from getCalls() but the conversation search endpoint's
-  // shape varies. Leaving empty for now — AI Calls page will show zeroes,
-  // which is honest rather than fabricated.
-  const calls: MockCall[] = [];
 
   // Include unattributed as a synthetic affiliate so those deals still appear
   // in totals rather than silently disappearing.
