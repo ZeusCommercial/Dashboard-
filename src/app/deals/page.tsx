@@ -1,4 +1,5 @@
 import { BarList, Card, KpiCard, Table, Td } from "@/components/ui";
+import { PipelineFilter } from "@/components/PipelineFilter";
 import {
   compactMoney,
   dealSizeDistribution,
@@ -33,6 +34,16 @@ export default async function DealsPage({
           Distribution across commission bands and deals that need attention.
         </p>
       </div>
+
+      {data.pipelines.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-[13px] text-muted">Filter by pipeline:</div>
+          <PipelineFilter
+            pipelines={data.pipelines}
+            current={data.pipelineFilter}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
