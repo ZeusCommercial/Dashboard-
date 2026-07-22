@@ -144,7 +144,7 @@ export async function loadLiveDataset(opts: {
       getOpportunities({ pipelineId: pipelineId ?? undefined, maxPages: 40 }),
       getContacts({ maxPages: 40 }),
       loadAffiliateRegistry(),
-      getVoiceAiCalls({ pageSize: 100, maxPages: 50 }),
+      getVoiceAiCalls({ pageSize: 50, maxPages: 50 }),
     ]);
 
   // Build a stage-id -> stage-name map across every pipeline. Opportunities
