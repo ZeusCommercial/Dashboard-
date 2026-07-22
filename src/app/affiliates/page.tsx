@@ -57,129 +57,142 @@ export default async function AffiliatesPage({
       </div>
 
       <Card title="Top Producers" subtitle="Sorted by funded volume">
-        <Table
-          head={[
-            "Partner",
-            "Tier",
-            "Deals",
-            "Funded",
-            "Direct $",
-            "Override $",
-            "Total $",
-          ]}
-        >
-          {totals.slice(0, 10).map((row) => (
-            <tr key={row.affiliateId} className="border-b border-hairline/60">
-              <Td align="left">
-                <div className="font-medium text-bright">{row.name}</div>
-                <div className="text-[11px] text-muted/60">{row.affiliateId}</div>
-              </Td>
-              <Td>
-                <TierBadge tier={row.tier} />
-              </Td>
-              <Td>{row.directDeals}</Td>
-              <Td>{compactMoney(row.directFunded)}</Td>
-              <Td>
-                {row.directEarnings > 0 ? (
-                  money(row.directEarnings)
-                ) : row.pendingEarnings > 0 ? (
-                  <Pending label={`${row.pendingEarnings} pending`} />
-                ) : (
-                  <span className="text-muted/50">—</span>
-                )}
-              </Td>
-              <Td>
-                {row.overrideEarnings > 0 ? (
-                  <span className="text-gold">{money(row.overrideEarnings)}</span>
-                ) : (
-                  <span className="text-muted/50">—</span>
-                )}
-              </Td>
-              <Td>
-                <span className="font-semibold text-bright">
-                  {money(row.totalEarnings)}
-                </span>
-              </Td>
-            </tr>
-          ))}
-        </Table>
+        {totals.length === 0 ? (
+          <div className="py-10 text-center text-[13px] text-muted/70">
+            No funded deals attributed to affiliates yet.
+          </div>
+        ) : (
+          <Table
+            head={[
+              "Partner",
+              "Tier",
+              "Deals",
+              "Funded",
+              "Direct $",
+              "Override $",
+              "Total $",
+            ]}
+          >
+            {totals.slice(0, 10).map((row) => (
+              <tr key={row.affiliateId} className="border-b border-hairline/60">
+                <Td align="left">
+                  <div className="font-medium text-bright">{row.name}</div>
+                  <div className="text-[11px] text-muted/60">{row.affiliateId}</div>
+                </Td>
+                <Td>
+                  <TierBadge tier={row.tier} />
+                </Td>
+                <Td>{row.directDeals}</Td>
+                <Td>{compactMoney(row.directFunded)}</Td>
+                <Td>
+                  {row.directEarnings > 0 ? (
+                    money(row.directEarnings)
+                  ) : row.pendingEarnings > 0 ? (
+                    <Pending label={`${row.pendingEarnings} pending`} />
+                  ) : (
+                    <span className="text-muted/50">—</span>
+                  )}
+                </Td>
+                <Td>
+                  {row.overrideEarnings > 0 ? (
+                    <span className="text-gold">{money(row.overrideEarnings)}</span>
+                  ) : (
+                    <span className="text-muted/50">—</span>
+                  )}
+                </Td>
+                <Td>
+                  <span className="font-semibold text-bright">
+                    {money(row.totalEarnings)}
+                  </span>
+                </Td>
+              </tr>
+            ))}
+          </Table>
+        )}
       </Card>
 
       <Card
         title="AM → SAM Hierarchy"
         subtitle="Downline attribution and overrides"
       >
-        <div className="space-y-4">
-          {tree.map(({ am, sams }) => (
-            <div
-              key={am.affiliateId}
-              className="rounded-lg border border-hairline bg-ink/30 p-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-bright">{am.name}</span>
-                    <TierBadge tier={am.tier} />
-                    <span className="text-[10px] uppercase tracking-wider text-muted/60">
-                      AM
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[11px] text-muted/70">
-                    Own: {am.directDeals} deals · {compactMoney(am.directFunded)}
-                    {" · "}
-                    Downline: {am.downlineDeals} deals ·{" "}
-                    {compactMoney(am.downlineFunded)}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="tnum font-display text-xl text-bright">
-                    {money(am.totalEarnings)}
-                  </div>
-                  <div className="text-[11px] text-muted/70">
-                    {money(am.directEarnings)} direct ·{" "}
-                    <span className="text-gold">
-                      {money(am.overrideEarnings)} override
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {sams.length > 0 && (
-                <div className="mt-4 space-y-2 border-l-2 border-hairline pl-4">
-                  {sams.map((sam) => (
-                    <div
-                      key={sam.affiliateId}
-                      className="flex items-center justify-between gap-3 rounded bg-raised/40 px-3 py-2"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted/40">↳</span>
-                        <span className="text-[13px] text-bright/90">
-                          {sam.name}
-                        </span>
-                        <TierBadge tier={sam.tier} />
-                        <span className="text-[10px] uppercase tracking-wider text-muted/60">
-                          SAM
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-[12px]">
-                        <span className="tnum text-muted/70">
-                          {sam.directDeals}d · {compactMoney(sam.directFunded)}
-                        </span>
-                        <span className="tnum font-semibold text-bright">
-                          {sam.directEarnings > 0
-                            ? money(sam.directEarnings)
-                            : sam.pendingEarnings > 0
-                              ? <Pending />
-                              : "—"}
-                        </span>
-                      </div>
+        {tree.length === 0 ? (
+          <div className="py-10 text-center text-[13px] text-muted/70">
+            No affiliates registered yet. Create contacts tagged{" "}
+            <code className="text-gold">zeus-affiliate-registry</code> in GHL.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tree.map(({ am, sams }) => (
+              <div
+                key={am.affiliateId}
+                className="rounded-lg border border-hairline bg-ink/30 p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-bright">{am.name}</span>
+                      <TierBadge tier={am.tier} />
+                      <span className="text-[10px] uppercase tracking-wider text-muted/60">
+                        AM
+                      </span>
                     </div>
-                  ))}
+                    <div className="mt-1 text-[11px] text-muted/70">
+                      Own: {am.directDeals} deals · {compactMoney(am.directFunded)}
+                      {" · "}
+                      Downline: {am.downlineDeals} deals ·{" "}
+                      {compactMoney(am.downlineFunded)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="tnum font-display text-xl text-bright">
+                      {money(am.totalEarnings)}
+                    </div>
+                    <div className="text-[11px] text-muted/70">
+                      {money(am.directEarnings)} direct ·{" "}
+                      <span className="text-gold">
+                        {money(am.overrideEarnings)} override
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+
+                {sams.length > 0 && (
+                  <div className="mt-4 space-y-2 border-l-2 border-hairline pl-4">
+                    {sams.map((sam) => (
+                      <div
+                        key={sam.affiliateId}
+                        className="flex items-center justify-between gap-3 rounded bg-raised/40 px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted/40">↳</span>
+                          <span className="text-[13px] text-bright/90">
+                            {sam.name}
+                          </span>
+                          <TierBadge tier={sam.tier} />
+                          <span className="text-[10px] uppercase tracking-wider text-muted/60">
+                            SAM
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-[12px]">
+                          <span className="tnum text-muted/70">
+                            {sam.directDeals}d · {compactMoney(sam.directFunded)}
+                          </span>
+                          <span className="tnum font-semibold text-bright">
+                            {sam.directEarnings > 0
+                              ? money(sam.directEarnings)
+                              : sam.pendingEarnings > 0
+                                ? <Pending />
+                                : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </main>
   );
