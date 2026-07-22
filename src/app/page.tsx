@@ -5,6 +5,7 @@ import {
   ColumnChart,
   KpiCard,
 } from "@/components/ui";
+import { PipelineFilter } from "@/components/PipelineFilter";
 import {
   compactMoney,
   conversionFunnel,
@@ -18,8 +19,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default function OverviewPage() {
-  const data = loadDataset();
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: { pipeline?: string };
+}) {
+  const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const kpis = overviewKpis(data);
   const revenue = revenueByMonth(data);
   const stages = pipelineByStage(data);
@@ -36,6 +41,16 @@ export default function OverviewPage() {
           numbers below are illustrative. Add <code>GHL_PRIVATE_TOKEN</code> and{" "}
           <code>GHL_LOCATION_ID</code> in Render to switch to live data.
         </Banner>
+      )}
+
+      {data.pipelines.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-[13px] text-muted">Filter by pipeline:</div>
+          <PipelineFilter
+            pipelines={data.pipelines}
+            current={data.pipelineFilter}
+          />
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
