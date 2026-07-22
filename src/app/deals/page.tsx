@@ -10,8 +10,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default function DealsPage() {
-  const data = loadDataset();
+export default async function DealsPage({
+  searchParams,
+}: {
+  searchParams: { pipeline?: string };
+}) {
+  const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const dist = dealSizeDistribution(data);
   const stale = staleDeals(data, 21);
 
