@@ -342,3 +342,232 @@ export function readCustomField(
   const raw = hit.value ?? hit.fieldValue;
   return raw === null || raw === undefined ? null : String(raw);
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Voice AI call logs (Samantha). Replaces the old /conversations/search hack.
+// Endpoint: GET /voice-ai/dashboard/call-logs  (scoped to a location)
+// Docs: marketplace.gohighlevel.com/docs/ghl/voice-ai/get-call-logs
+//
+// NOTE: field names below are our best guess from the dashboard UI. The exact
+// JSON keys are confirmed by running probeVoiceAiCalls() on /discover first.
+// Adjust the mapping in getVoiceAiCalls once the probe shows the real shape.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type GhlVoiceCall = {
+  id: string;
+  contactId?: string;
+  contactName?: string;
+  agentName?: string;
+  fromNumber?: string;
+  direction?: string;        // "inbound" | "outbound"
+  durationSec: number;
+  startedAt?: string;        // ISO
+  actionsTriggered?: string[]; // e.g. ["Hot Lead Transfer to Thomas"]
+  sentiment?: string;
+  callStatus?: string;
+};
+
+/**
+ * Raw probe — returns { status, sampleKeys, firstRecord } so we can see the
+ * real response shape on the /discover page without guessing field names.
+ * Does NOT throw on non-2xx; captures the status + body so 401/403/404 is visible.
+ */
+export async function probeVoiceAiCalls(): Promise<{
+  status: number;
+  ok: boolean;
+  topLevelKeys: string[];
+  firstRecord: unknown;
+  bodyPreview: string;
+}> {
+  const url = new URL(`${GHL_BASE}/voice-ai/dashboard/call-logs`);
+  url.searchParams.set("locationId", LOCATION_ID ?? "");
+  url.searchParams.set("limit", "20");
+
+  await throttle();
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+      Version: GHL_VERSION,
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  const text = await res.text().catch(() => "");
+  let json: unknown = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    /* leave null */
+  }
+
+  const obj = (json ?? {}) as Record<string, unknown>;
+  const topLevelKeys = json && typeof json === "object" ? Object.keys(obj) : [];
+
+  // Try the likeliest array container names.
+  const arr =
+    (obj.callLogs as unknown[]) ??
+    (obj.calls as unknown[]) ??
+    (obj.logs as unknown[]) ??
+    (obj.data as unknown[]) ??
+    (Array.isArray(json) ? (json as unknown[]) : []);
+
+  return {
+    status: res.status,
+    ok: res.ok,
+    topLevelKeys,
+    firstRecord: Array.isArray(arr) && arr.length ? arr[0] : null,
+    bodyPreview: text.slice(0, 600),
+  };
+}
+
+/**
+ * Fetches Voice AI call logs and normalizes to GhlVoiceCall[].
+ * Paginated (1-based per docs). Tolerant of the exact container/key names
+ * differing — adjust the pick() calls after the probe confirms the shape.
+ */
+export async function getVoiceAiCalls(params: {
+  startDate?: string; // ISO or YYYY-MM-DD
+  endDate?: string;
+  agentId?: string;
+  maxPages?: number;
+} = {}): Promise<GhlVoiceCall[]> {
+  const { startDate, endDate, agentId, maxPages = 20 } = params;
+  const all: GhlVoiceCall[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    let data: Record<string, unknown>;
+    try {
+      data = await request<Record<string, unknown>>(
+        "/voice-ai/dashboard/call-logs",
+        {
+          query: {
+            locationId: LOCATION_ID,
+            limit: 100,
+            page,
+            startDate,
+            endDate,
+            agentId,
+          },
+        }
+      );
+    } catch (err) {
+      // If the endpoint is unauthorized/unavailable for this token, don't crash
+      // the whole dashboard — return whatever we have (likely nothing) and let
+      // the AI Calls page show zeros honestly.
+      if (err instanceof GhlError && [401, 403, 404].includes(err.status)) {
+        return all;
+      }
+      throw err;
+    }
+
+    const batch =
+      (data.callLogs as unknown[]) ??
+      (data.calls as unknown[]) ??
+      (data.logs as unknown[]) ??
+      (data.data as unknown[]) ??
+      [];
+
+    if (!Array.isArray(batch) || batch.length === 0) break;
+
+    for (const raw of batch as Record<string, unknown>[]) {
+      all.push(normalizeVoiceCall(raw));
+    }
+
+    if (batch.length < 100) break;
+  }
+
+  return all;
+}
+
+function pickStr(o: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const k of keys) {
+    const v = o[k];
+    if (typeof v === "string" && v) return v;
+    if (typeof v === "number") return String(v);
+  }
+  return undefined;
+}
+
+function pickNum(o: Record<string, unknown>, ...keys: string[]): number | undefined {
+  for (const k of keys) {
+    const v = o[k];
+    if (typeof v === "number" && !Number.isNaN(v)) return v;
+    if (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v))) {
+      return Number(v);
+    }
+  }
+  return undefined;
+}
+
+/** Parse "mm:ss" or "hh:mm:ss" (as seen in the dashboard) into seconds. */
+function parseClock(s: string | undefined): number | undefined {
+  if (!s) return undefined;
+  const parts = s.split(":").map((p) => Number(p));
+  if (parts.some((n) => Number.isNaN(n))) return undefined;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return undefined;
+}
+
+/**
+ * Maps a normalized Voice AI call to one of the 5 MockCall outcomes:
+ * "Booked" | "Answered" | "No Answer" | "Voicemail" | "Declined".
+ * Booking is inferred from actionsTriggered containing an appointment/booking
+ * action, or an explicit booked status. Everything else falls back to duration.
+ */
+export function classifyVoiceOutcome(
+  c: GhlVoiceCall
+): "Booked" | "Answered" | "No Answer" | "Voicemail" | "Declined" {
+  const status = (c.callStatus ?? "").toLowerCase();
+  const actions = (c.actionsTriggered ?? []).join(" ").toLowerCase();
+
+  const booked =
+    /book|appointment|schedule|calendar/.test(actions) ||
+    /book|appointment/.test(status);
+  if (booked) return "Booked";
+
+  if (/no[\s-]?answer|missed|no[\s-]?connect/.test(status)) return "No Answer";
+  if (/voicemail|vm/.test(status)) return "Voicemail";
+  if (/declin|reject|failed|busy/.test(status)) return "Declined";
+
+  // Fall back to duration when status isn't explicit.
+  const d = c.durationSec;
+  if (d <= 0) return "No Answer";
+  if (d < 12) return "No Answer";
+  if (d < 30) return "Voicemail";
+  return "Answered";
+}
+
+function normalizeVoiceCall(raw: Record<string, unknown>): GhlVoiceCall {
+  const durationSec =
+    pickNum(raw, "durationSec", "duration", "callDuration", "durationSeconds") ??
+    parseClock(pickStr(raw, "duration", "callDuration")) ??
+    0;
+
+  const actionsRaw =
+    (raw.actionsTriggered as unknown) ??
+    (raw.actions as unknown) ??
+    (raw.actionType as unknown);
+  const actionsTriggered = Array.isArray(actionsRaw)
+    ? actionsRaw.map((a) => String(a)).filter((a) => a && a !== "-")
+    : typeof actionsRaw === "string" && actionsRaw && actionsRaw !== "-"
+      ? [actionsRaw]
+      : [];
+
+  return {
+    id: pickStr(raw, "id", "callId", "_id") ?? crypto.randomUUID(),
+    contactId: pickStr(raw, "contactId", "contact_id"),
+    contactName: pickStr(raw, "contactName", "contact", "name"),
+    agentName: pickStr(raw, "agentName", "agent"),
+    fromNumber: pickStr(raw, "fromNumber", "from", "phone", "phoneNumber"),
+    direction: pickStr(raw, "direction", "callType", "type"),
+    durationSec,
+    startedAt: pickStr(raw, "startedAt", "dateAdded", "createdAt", "dateTime", "date"),
+    actionsTriggered,
+    sentiment: pickStr(raw, "sentiment"),
+    callStatus: pickStr(raw, "status", "callStatus"),
+  };
+}
+
