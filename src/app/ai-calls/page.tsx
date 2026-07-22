@@ -7,7 +7,9 @@ import {
   loadDataset,
   pct,
 } from "@/lib/metrics";
+
 export const dynamic = "force-dynamic";
+
 export default async function AiCallsPage({
   searchParams,
 }: {
@@ -17,6 +19,7 @@ export default async function AiCallsPage({
   const m = callMetrics(data);
   const outcomes = callOutcomes(data);
   const weekly = callVolumeByWeek(data);
+
   return (
     <main className="space-y-6">
       <div>
@@ -27,6 +30,7 @@ export default async function AiCallsPage({
           Volume, quality, and speed of your AI voice agent.
         </p>
       </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Total Calls"
@@ -49,6 +53,7 @@ export default async function AiCallsPage({
           hint={`${pct(m.under5Rate)} under 5 minutes`}
         />
       </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
           title="Call Volume by Week"
@@ -63,17 +68,19 @@ export default async function AiCallsPage({
             }))}
           />
         </Card>
+
         <Card title="Call Outcomes" subtitle="Distribution across all calls">
           <BarList
             rows={outcomes.map((o) => ({
               label: o.outcome,
               value: o.count,
               display: `${o.count}`,
-              sub: pct(o.count / m.total),
+              sub: m.total > 0 ? pct(o.count / m.total) : "0%",
             }))}
           />
         </Card>
       </div>
+
       <Card
         title="Performance Detail"
         subtitle="What Samantha is doing well and where the drop-offs are"
@@ -87,7 +94,11 @@ export default async function AiCallsPage({
           <Metric
             label="Uncontacted Leads"
             value={`${m.uncontacted.toLocaleString()}`}
-            note={`${pct(m.uncontacted / (m.contacted + m.uncontacted))} of contacts`}
+            note={
+              m.contacted + m.uncontacted > 0
+                ? `${pct(m.uncontacted / (m.contacted + m.uncontacted))} of contacts`
+                : "No contacts yet"
+            }
             warn={m.uncontacted > 0}
           />
           <Metric
@@ -105,6 +116,7 @@ export default async function AiCallsPage({
     </main>
   );
 }
+
 function Metric({
   label,
   value,
