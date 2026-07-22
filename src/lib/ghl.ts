@@ -399,7 +399,7 @@ export async function getVoiceAiCalls(params: {
   maxPages?: number;
   includeTrialCalls?: boolean;
 } = {}): Promise<GhlVoiceCall[]> {
-  const { pageSize = 100, maxPages = 50, includeTrialCalls = false } = params;
+  const { pageSize = 50, maxPages = 50, includeTrialCalls = false } = params;
   const all: GhlVoiceCall[] = [];
   for (let page = 1; page <= maxPages; page++) {
     let data: VoiceCallLogsResponse;
