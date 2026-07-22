@@ -1,4 +1,5 @@
 import { BarList, Card, ColumnChart, KpiCard } from "@/components/ui";
+import RangeFilter from "@/components/RangeFilter";
 import {
   callMetrics,
   callOutcomes,
@@ -13,22 +14,43 @@ export const dynamic = "force-dynamic";
 export default async function AiCallsPage({
   searchParams,
 }: {
-  searchParams: { pipeline?: string };
+  searchParams: { pipeline?: string; range?: string };
 }) {
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
-  const m = callMetrics(data);
-  const outcomes = callOutcomes(data);
-  const weekly = callVolumeByWeek(data);
+
+  // Filter calls + contacts to the selected time window (?range=days)
+  const rangeDays = Number(searchParams.range) || null;
+  const cutoff = rangeDays
+    ? new Date(Date.now() - rangeDays * 86_400_000).toISOString()
+    : null;
+
+  const filtered = cutoff
+    ? {
+        ...data,
+        calls: data.calls.filter((c) => c.createdAt >= cutoff),
+        contacts: data.contacts.filter((c) => c.createdAt >= cutoff),
+      }
+    : data;
+
+  const m = callMetrics(filtered);
+  const outcomes = callOutcomes(filtered);
+  const weekly = callVolumeByWeek(filtered);
+  const voicemails = filtered.calls.filter(
+    (c) => c.outcome === "Voicemail"
+  ).length;
 
   return (
     <main className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl text-bright">
-          Samantha AI Call Analytics
-        </h1>
-        <p className="mt-1 text-[13px] text-muted">
-          Volume, quality, and speed of your AI voice agent.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl text-bright">
+            Samantha AI Call Analytics
+          </h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Volume, quality, and speed of your AI voice agent.
+          </p>
+        </div>
+        <RangeFilter />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -38,9 +60,9 @@ export default async function AiCallsPage({
           hint={`${m.contacted.toLocaleString()} contacts reached`}
         />
         <KpiCard
-          label="Booked Appointments"
-          value={`${m.booked.toLocaleString()}`}
-          hint={`${pct(m.bookRate)} of all calls`}
+          label="Voicemails Left"
+          value={`${voicemails.toLocaleString()}`}
+          hint={`${pct(m.total ? voicemails / m.total : 0)} of all calls`}
         />
         <KpiCard
           label="Connect Rate"
