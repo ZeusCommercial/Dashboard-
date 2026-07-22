@@ -9,8 +9,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default function AffiliatesPage() {
-  const data = loadDataset();
+export default async function AffiliatesPage({
+  searchParams,
+}: {
+  searchParams: { pipeline?: string };
+}) {
+  const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const totals = commissionTable(data);
   const tree = affiliateTree(data);
 
