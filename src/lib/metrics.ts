@@ -8,6 +8,7 @@ import {
   type MockContact,
   type MockDeal,
 } from "./mock";
+import { hasLiveCredentials, loadLiveDataset } from "./ghl-data";
 
 export const FUNDED_STAGE = "Funded";
 
@@ -46,14 +47,33 @@ export type Dataset = {
   pipelineFilter: string | null;
 };
 
-export function loadDataset(): Dataset {
+export async function loadDataset(opts: {
+  pipelineId?: string | null;
+} = {}): Promise<Dataset> {
+  if (!hasLiveCredentials()) {
+    // Fallback to mock when credentials are missing
+    return {
+      deals: mockDeals(),
+      contacts: mockContacts(),
+      calls: mockCalls(),
+      affiliates: MOCK_AFFILIATES,
+      isMock: true,
+      generatedAt: new Date().toISOString(),
+      pipelines: [],
+      pipelineFilter: null,
+    };
+  }
+
+  const live = await loadLiveDataset(opts);
   return {
-    deals: mockDeals(),
-    contacts: mockContacts(),
-    calls: mockCalls(),
-    affiliates: MOCK_AFFILIATES,
-    isMock: true,
-    generatedAt: new Date().toISOString(),
+    deals: live.deals,
+    contacts: live.contacts,
+    calls: live.calls,
+    affiliates: live.affiliates,
+    isMock: false,
+    generatedAt: live.generatedAt,
+    pipelines: live.pipelines,
+    pipelineFilter: live.pipelineFilter,
   };
 }
 
