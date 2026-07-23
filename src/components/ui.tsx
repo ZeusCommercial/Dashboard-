@@ -15,18 +15,18 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-xl border border-hairline bg-surface ${className}`}
+      className={`rounded-xl border border-hairline bg-surface shadow-md ${className}`}
     >
       {(title || action) && (
         <header className="flex items-start justify-between gap-4 border-b border-hairline px-5 py-4">
           <div>
             {title && (
-              <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-gold">
                 {title}
               </h2>
             )}
             {subtitle && (
-              <p className="mt-1 text-xs text-muted/70">{subtitle}</p>
+              <p className="mt-1 text-xs text-muted/80">{subtitle}</p>
             )}
           </div>
           {action}
@@ -52,12 +52,12 @@ export function KpiCard({
   const up = hasDelta && delta! >= 0;
 
   return (
-    <div className="rounded-xl border border-hairline bg-surface p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+    <div className="rounded-xl border border-hairline bg-surface p-5 shadow-md">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
         {label}
       </div>
       <div className="mt-3 flex items-baseline gap-2.5">
-        <span className="tnum font-display text-[34px] leading-none text-bright">
+        <span className="tnum font-display text-[34px] leading-none text-white">
           {value}
         </span>
         {hasDelta && (
@@ -70,7 +70,7 @@ export function KpiCard({
           </span>
         )}
       </div>
-      {hint && <div className="mt-2 text-xs text-muted/70">{hint}</div>}
+      {hint && <div className="mt-2 text-xs text-muted/80">{hint}</div>}
     </div>
   );
 }
@@ -87,11 +87,11 @@ export function BarList({
       {rows.map((r) => (
         <div key={r.label}>
           <div className="mb-1.5 flex items-baseline justify-between gap-3">
-            <span className="text-[13px] text-bright/90">{r.label}</span>
-            <span className="tnum text-[13px] font-semibold text-bright">
+            <span className="text-[13px] text-white/90">{r.label}</span>
+            <span className="tnum text-[13px] font-semibold text-white">
               {r.display}
               {r.sub && (
-                <span className="ml-2 font-normal text-muted/70">{r.sub}</span>
+                <span className="ml-2 font-normal text-muted/80">{r.sub}</span>
               )}
             </span>
           </div>
@@ -124,7 +124,7 @@ export function ColumnChart({
             key={r.label}
             className="group flex flex-1 flex-col items-center justify-end gap-2"
           >
-            <span className="tnum text-[11px] font-semibold text-muted opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="tnum text-[11px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
               {r.display}
             </span>
             <div
@@ -141,7 +141,7 @@ export function ColumnChart({
         {rows.map((r) => (
           <div
             key={r.label}
-            className="flex-1 text-center text-[10px] uppercase tracking-wide text-muted/70"
+            className="flex-1 text-center text-[10px] uppercase tracking-wide text-muted/80"
           >
             {r.label}
           </div>
@@ -160,13 +160,13 @@ export function Table({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]">
+      <table className="w-full border-collapse text-[13px] text-white/90">
         <thead>
           <tr className="border-b border-hairline">
             {head.map((h, i) => (
               <th
                 key={h}
-                className={`pb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted ${
+                className={`pb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gold ${
                   i === 0 ? "text-left" : "text-right"
                 }`}
               >
@@ -206,7 +206,7 @@ export function TierBadge({ tier }: { tier: "TIER_1" | "TIER_2" }) {
       className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
         two
           ? "bg-gold/15 text-gold ring-1 ring-gold/30"
-          : "bg-muted/10 text-muted ring-1 ring-muted/20"
+          : "bg-white/10 text-muted ring-1 ring-white/20"
       }`}
     >
       {two ? "Tier 2" : "Tier 1"}
@@ -234,7 +234,7 @@ export function Banner({
     <div
       className={`rounded-lg border px-4 py-3 text-[13px] ${
         warn
-          ? "border-gold/25 bg-gold/[0.06] text-gold/90"
+          ? "border-gold/40 bg-gold/10 text-goldDim"
           : "border-hairline bg-surface text-muted"
       }`}
     >
@@ -245,6 +245,6 @@ export function Banner({
 
 export function Empty({ children }: { children: ReactNode }) {
   return (
-    <div className="py-10 text-center text-[13px] text-muted/70">{children}</div>
+    <div className="py-10 text-center text-[13px] text-muted/80">{children}</div>
   );
 }
