@@ -5,16 +5,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink:      "#0A1628",
-        surface:  "#0F1F35",
-        raised:   "#152943",
-        hairline: "#1E3A5C",
-        muted:    "#7B93B4",
-        bright:   "#E8F0FA",
-        gold:     "#F5A623",
-        goldDim:  "#B87D14",
-        gain:     "#34D399",
-        loss:     "#F87171",
+        // page background is now white (set in globals.css / layout)
+        surface: "#0B2444",        // card background (dark navy)
+        ink: "#08192F",            // darker track inside cards (bar backgrounds)
+        hairline: "#1E3A5F",       // card borders — visible on white
+        bright: "#FFFFFF",         // big numbers / primary text in cards
+        muted: "#9FB3CC",          // secondary text inside dark cards
+        gold: "#F5A524",           // headings + accents
+        goldDim: "#C07F12",
+        gain: "#34D399",
+        loss: "#F87171",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
