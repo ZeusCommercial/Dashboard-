@@ -5,21 +5,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // page background is now white (set in globals.css / layout)
-        surface: "#0B2444",        // card background (dark navy)
-        ink: "#08192F",            // darker track inside cards (bar backgrounds)
-        hairline: "#1E3A5F",       // card borders — visible on white
-        bright: "#FFFFFF",         // big numbers / primary text in cards
-        muted: "#9FB3CC",          // secondary text inside dark cards
-        gold: "#F5A524",           // headings + accents
+        ink: "#0B2444",        // page background — navy
+        surface: "#FFFFFF",    // card background — white
+        hairline: "#E2E8F0",   // borders inside white cards
+        bright: "#0B2444",     // numbers & primary text in cards — navy
+        muted: "#64748B",      // secondary text in cards — slate
+        gold: "#F5A524",
         goldDim: "#C07F12",
-        gain: "#34D399",
-        loss: "#F87171",
-      },
-      fontFamily: {
-        display: ["var(--font-display)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        gain: "#059669",
+        loss: "#DC2626",
       },
     },
   },
