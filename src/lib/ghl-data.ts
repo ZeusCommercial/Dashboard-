@@ -274,7 +274,7 @@ export async function loadLiveDataset(opts: {
   // in totals rather than silently disappearing.
   const affiliatesWithUnattributed: MockAffiliate[] = [
     ...affiliates,
-    { id: "unattributed", name: "Unattributed", tier: "TIER_1", uplineId: null },
+    { id: "unattributed", name: "Direct / No Partner", tier: "TIER_1", uplineId: null },
   ];
 
   return {
