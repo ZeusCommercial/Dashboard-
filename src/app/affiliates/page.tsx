@@ -116,11 +116,11 @@ export default async function AffiliatesPage({
         subtitle="Downline attribution and overrides"
       >
         {tree.length === 0 ? (
-          <div className="py-10 text-center text-[13px] text-muted/70">
-            No affiliates registered yet. Create contacts tagged{" "}
-            <code className="text-gold">zeus-affiliate-registry</code> in GHL.
-          </div>
-        ) : (
+        <div className="py-10 text-center text-[13px] text-muted/70">
+           No affiliates in the registry yet. Add partners to the
+        affiliate sheet, or check that the hourly sync is running.
+       </div>
+          ) : (
           <div className="space-y-4">
             {tree.map(({ am, sams }) => (
               <div
