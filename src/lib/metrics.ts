@@ -338,35 +338,83 @@ export function commissionTable(d: Dataset) {
   return rollup(rows, directory);
 }
 
+type Person = {
+  ids: string[];
+  name: string;
+  tier: Tier;
+  uplineId: string | null;
+};
+
+/**
+ * Builds the AM → SAM tree from the affiliate registry.
+ *
+ * Each partner holds two tracking IDs (Funding Campaign and Partner Program),
+ * which arrive from the sheet as two separate registry entries. We merge them
+ * back into one person here, summing their deals and earnings across both
+ * campaigns, so the hierarchy shows one card per human rather than two.
+ *
+ * A person is treated as a root AM when they have no upline, or when their
+ * upline ID doesn't belong to any partner in the registry — otherwise they'd
+ * vanish from the tree entirely.
+ */
 export function affiliateTree(d: Dataset) {
   const totals = commissionTable(d);
   const byId = new Map(totals.map((t) => [t.affiliateId, t]));
 
-  const roots = d.affiliates.filter((a) => !a.uplineId);
-  return roots.map((root) => {
-    const self = byId.get(root.id);
-    const children = d.affiliates
-      .filter((a) => a.uplineId === root.id)
-      .map((c) => byId.get(c.id))
-      .filter(Boolean);
+  // Group registry entries into people, keyed on name.
+  const people = new Map<string, Person>();
+  for (const a of d.affiliates) {
+    const key = a.name;
+    const existing = people.get(key);
+    if (existing) {
+      existing.ids.push(a.id);
+    } else {
+      people.set(key, {
+        ids: [a.id],
+        name: a.name,
+        tier: a.tier as Tier,
+        uplineId: a.uplineId,
+      });
+    }
+  }
+
+  // Which person owns a given tracking ID — used to resolve uplines.
+  const ownerOfId = new Map<string, string>();
+  for (const [key, p] of people) {
+    for (const id of p.ids) ownerOfId.set(id, key);
+  }
+
+  const merge = (p: Person) => {
+    const parts = p.ids
+      .map((id) => byId.get(id))
+      .filter(Boolean) as NonNullable<ReturnType<typeof byId.get>>[];
+    const sum = (f: (x: (typeof parts)[number]) => number) =>
+      parts.reduce((s, x) => s + f(x), 0);
 
     return {
-      am: self ?? {
-        affiliateId: root.id,
-        name: root.name,
-        tier: root.tier,
-        uplineId: null,
-        directDeals: 0,
-        directFunded: 0,
-        directEarnings: 0,
-        pendingEarnings: 0,
-        overrideEarnings: 0,
-        overrideDeals: 0,
-        totalEarnings: 0,
-        downlineDeals: 0,
-        downlineFunded: 0,
-      },
-      sams: children as NonNullable<(typeof children)[number]>[],
+      affiliateId: p.ids[0],
+      name: p.name,
+      tier: p.tier,
+      uplineId: p.uplineId,
+      directDeals: sum((x) => x.directDeals),
+      directFunded: sum((x) => x.directFunded),
+      directEarnings: sum((x) => x.directEarnings),
+      pendingEarnings: sum((x) => x.pendingEarnings),
+      overrideEarnings: sum((x) => x.overrideEarnings),
+      overrideDeals: sum((x) => x.overrideDeals),
+      totalEarnings: sum((x) => x.totalEarnings),
+      downlineDeals: sum((x) => x.downlineDeals),
+      downlineFunded: sum((x) => x.downlineFunded),
     };
+  };
+
+  const all = [...people.values()];
+  const roots = all.filter((p) => !p.uplineId || !ownerOfId.has(p.uplineId));
+
+  return roots.map((root) => {
+    const children = all.filter(
+      (p) => p.uplineId && ownerOfId.get(p.uplineId) === root.name
+    );
+    return { am: merge(root), sams: children.map(merge) };
   });
 }
