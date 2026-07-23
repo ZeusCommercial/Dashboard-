@@ -31,7 +31,7 @@ export default async function DealsPage({
       <div>
         <h1 className="font-display text-2xl text-bright">Deals</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Distribution across commission bands and deals that need attention.
+          
         </p>
       </div>
 
@@ -71,7 +71,7 @@ export default async function DealsPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card
           title="Deal Size Distribution"
-          subtitle="How many funded deals landed in each commission band"
+          
         >
           <Table head={["Band", "Payout", "Deals", "Volume"]}>
             {dist.map((row) => (
@@ -91,7 +91,7 @@ export default async function DealsPage({
 
         <Card
           title="Volume Share by Band"
-          subtitle="Where the money actually comes from"
+          
         >
           <BarList
             rows={dist.map((d) => ({
