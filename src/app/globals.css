@@ -10,8 +10,8 @@
 
 html,
 body {
-  background: #0a1628;
-  color: #e8f0fa;
+  background: #ffffff;
+  color: #0b2444; /* text sitting on the white page (nav labels, footer) */
   -webkit-font-smoothing: antialiased;
 }
 
