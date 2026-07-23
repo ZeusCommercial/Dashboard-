@@ -15,10 +15,10 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-xl bg-surface shadow-lg ${className}`}
+      className={`rounded-xl border border-hairline bg-surface shadow-md ${className}`}
     >
       {(title || action) && (
-        <header className="flex items-start justify-between gap-4 border-b border-hairline px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-cardline px-5 py-4">
           <div>
             {title && (
               <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-gold">
@@ -52,7 +52,7 @@ export function KpiCard({
   const up = hasDelta && delta! >= 0;
 
   return (
-    <div className="rounded-xl bg-surface p-5 shadow-lg">
+    <div className="rounded-xl border border-hairline bg-surface p-5 shadow-md">
       <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
         {label}
       </div>
@@ -87,7 +87,7 @@ export function BarList({
       {rows.map((r) => (
         <div key={r.label}>
           <div className="mb-1.5 flex items-baseline justify-between gap-3">
-            <span className="text-[13px] text-bright/90">{r.label}</span>
+            <span className="text-[13px] text-soft">{r.label}</span>
             <span className="tnum text-[13px] font-semibold text-bright">
               {r.display}
               {r.sub && (
@@ -95,7 +95,7 @@ export function BarList({
               )}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[#EEF2F7]">
+          <div className="h-2 overflow-hidden rounded-full bg-nested">
             <div
               className="h-full rounded-full bg-gradient-to-r from-goldDim to-gold"
               style={{ width: `${Math.max((r.value / max) * 100, 1.5)}%` }}
@@ -137,7 +137,7 @@ export function ColumnChart({
           </div>
         ))}
       </div>
-      <div className="mt-2.5 flex gap-2 border-t border-hairline pt-2.5">
+      <div className="mt-2.5 flex gap-2 border-t border-cardline pt-2.5">
         {rows.map((r) => (
           <div
             key={r.label}
@@ -160,9 +160,9 @@ export function Table({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[13px] text-bright">
+      <table className="w-full border-collapse text-[13px] text-soft">
         <thead>
-          <tr className="border-b border-hairline">
+          <tr className="border-b border-cardline">
             {head.map((h, i) => (
               <th
                 key={h}
@@ -205,8 +205,8 @@ export function TierBadge({ tier }: { tier: "TIER_1" | "TIER_2" }) {
     <span
       className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
         two
-          ? "bg-gold/15 text-goldDim ring-1 ring-gold/40"
-          : "bg-muted/10 text-muted ring-1 ring-muted/25"
+          ? "bg-gold/15 text-gold ring-1 ring-gold/30"
+          : "bg-bright/10 text-muted ring-1 ring-bright/20"
       }`}
     >
       {two ? "Tier 2" : "Tier 1"}
@@ -216,7 +216,7 @@ export function TierBadge({ tier }: { tier: "TIER_1" | "TIER_2" }) {
 
 export function Pending({ label = "Pending" }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded bg-loss/10 px-2 py-0.5 text-[11px] font-medium text-loss ring-1 ring-loss/25">
+    <span className="inline-flex items-center gap-1.5 rounded bg-loss/10 px-2 py-0.5 text-[11px] font-medium text-loss/90 ring-1 ring-loss/20">
       {label}
     </span>
   );
@@ -234,8 +234,8 @@ export function Banner({
     <div
       className={`rounded-lg border px-4 py-3 text-[13px] ${
         warn
-          ? "border-gold/40 bg-gold/10 text-goldDim"
-          : "border-hairline bg-surface text-muted"
+          ? "border-gold/30 bg-gold/10 text-gold"
+          : "border-cardline bg-surface text-muted"
       }`}
     >
       {children}
