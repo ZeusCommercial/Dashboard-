@@ -5,7 +5,7 @@ const config: Config = {
   theme: {
     extend: {
      colors: {
-        page: "#EEF2F7",       // light blue-gray page background
+        page: "#D7E4F4",   // was #EEF2F7
         surface: "#12294B",    // card background — dark navy
         nested: "#1B3358",     // sub-cards / tracks inside cards
         hairline: "#E2E5EA",   // 1px card border on light bg
