@@ -46,9 +46,6 @@ export default async function AiCallsPage({
           <h1 className="font-display text-2xl text-bright">
             Samantha AI Call Analytics
           </h1>
-          <p className="mt-1 text-[13px] text-muted">
-            Volume, quality, and speed of your AI voice agent.
-          </p>
         </div>
         <RangeFilter />
       </div>
