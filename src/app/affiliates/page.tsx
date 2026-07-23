@@ -29,7 +29,6 @@ export default async function AffiliatesPage({
       <div>
         <h1 className="font-display text-2xl text-bright">Partner Network</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Leaderboard, hierarchy, and commissions owed across both campaigns.
         </p>
       </div>
 
@@ -112,8 +111,8 @@ export default async function AffiliatesPage({
       </Card>
 
       <Card
-        title="AM → SAM Hierarchy"
-        subtitle="Downline attribution and overrides"
+        title=" Hierarchy"
+        
       >
         {tree.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-muted/70">
