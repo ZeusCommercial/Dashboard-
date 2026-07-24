@@ -3,18 +3,21 @@ import {
   BarList,
   Card,
   ColumnChart,
+  ComboChart,
+  GroupedBarChart,
   KpiCard,
   Table,
   Td,
 } from "@/components/ui";
 import { PipelineFilter } from "@/components/PipelineFilter";
 import {
+  approvalTrendByMonth,
   compactMoney,
+  fundedVolumeByMonth,
   leadsOverTime,
   loadDataset,
   overviewKpis,
   pipelineByStage,
-  revenueByMonth,
   staleDeals,
 } from "@/lib/metrics";
 
@@ -27,7 +30,8 @@ export default async function OverviewPage({
 }) {
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const kpis = overviewKpis(data);
-  const revenue = revenueByMonth(data);
+  const funded = fundedVolumeByMonth(data);
+  const approvals = approvalTrendByMonth(data);
   const stages = pipelineByStage(data);
   const leads = leadsOverTime(data);
   const stale = staleDeals(data, 21);
@@ -47,7 +51,7 @@ export default async function OverviewPage({
 
       {data.pipelines.length > 0 && (
         <div className="flex items-center justify-between">
-          <div className="text-[13px] text-muted"></div>
+          <div className="text-[13px] text-muted">Filter by pipeline:</div>
           <PipelineFilter
             pipelines={data.pipelines}
             current={data.pipelineFilter}
@@ -67,12 +71,43 @@ export default async function OverviewPage({
           subtitle="Trailing 6 months"
           className="lg:col-span-2"
         >
-          <ColumnChart
-            rows={revenue.map((r) => ({
-              label: r.month,
-              value: r.revenue,
-              display: compactMoney(r.revenue),
+          <ComboChart
+            rows={funded.map((r) => ({
+              key: r.key,
+              label: r.label,
+              full: r.full,
+              bar: r.funded,
+              barDisplay: compactMoney(r.funded),
+              line: r.deals,
+              lineDisplay: `${r.deals}`,
             }))}
+            height={180}
+            lineLabel="Deals"
+          />
+
+          <div className="my-5 border-t border-hairline/60" />
+
+          <div className="mb-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gold">
+              Approval Trend
+            </div>
+            <div className="mt-1 text-xs text-muted">
+              Submitted vs approved · last 6 months
+            </div>
+          </div>
+
+          <GroupedBarChart
+            rows={approvals.map((r) => ({
+              label: r.label,
+              full: r.full,
+              values: {
+                submitted: r.submitted,
+                approved: r.approved,
+                declined: r.declined,
+              },
+              rate: r.rate,
+            }))}
+            height={190}
           />
         </Card>
 
