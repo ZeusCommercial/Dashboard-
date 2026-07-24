@@ -178,10 +178,7 @@ export function revenueByMonth(d: Dataset) {
  * first-seen order and push funded stages to the end.
  */
 export function pipelineByStage(d: Dataset) {
-  const map = new Map
-    string,
-    { count: number; value: number; position: number }
-  >();
+ const map = new Map<string, { count: number; value: number; position: number }>();
 
   d.deals.forEach((deal, i) => {
     const stage = deal.stage ?? "Unassigned";
