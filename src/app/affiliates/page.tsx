@@ -166,7 +166,7 @@ export default async function AffiliatesPage({
         )}
       </Card>
 
-      <Card title="Hierarchy">
+      <Card title="Partners">
         {tree.length === 0 ? (
           <div className="py-10 text-center text-[13px] text-muted/70">
             No affiliates in the registry yet. Add partners to the affiliate
