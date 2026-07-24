@@ -44,8 +44,9 @@ export default async function AffiliatesPage({
   return (
     <main className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl text-bright">PARTNERS</h1>
-       
+        <h1 className="font-display text-2xl text-bright">
+          Partner Commissions
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -82,7 +83,7 @@ export default async function AffiliatesPage({
         >
           <Table head={["Band", "Payout", "Deals", "Volume"]}>
             {dist.map((row) => (
-              <tr key={row.label} className="border-b border-hairline/60">
+              <tr key={row.label} className="border-b border-cardline/60">
                 <Td align="left">
                   <span className="font-medium text-bright">{row.label}</span>
                 </Td>
@@ -96,10 +97,7 @@ export default async function AffiliatesPage({
           </Table>
         </Card>
 
-        <Card
-          title="Volume Share by Band"
-          
-        >
+        <Card title="Volume Share by Band">
           <BarList
             rows={dist.map((d) => ({
               label: d.label,
@@ -113,7 +111,7 @@ export default async function AffiliatesPage({
 
       <Card title="Top Producers" subtitle="Sorted by funded volume">
         {totals.length === 0 ? (
-          <div className="py-10 text-center text-[13px] text-muted/70">
+          <div className="py-10 text-center text-[13px] text-muted">
             No funded deals attributed to affiliates yet.
           </div>
         ) : (
@@ -129,10 +127,10 @@ export default async function AffiliatesPage({
             ]}
           >
             {totals.slice(0, 10).map((row) => (
-              <tr key={row.affiliateId} className="border-b border-hairline/60">
+              <tr key={row.affiliateId} className="border-b border-cardline/60">
                 <Td align="left">
                   <div className="font-medium text-bright">{row.name}</div>
-                  <div className="text-[11px] text-muted/60">{row.affiliateId}</div>
+                  <div className="text-[11px] text-muted">{row.affiliateId}</div>
                 </Td>
                 <Td>
                   <TierBadge tier={row.tier} />
@@ -150,7 +148,9 @@ export default async function AffiliatesPage({
                 </Td>
                 <Td>
                   {row.overrideEarnings > 0 ? (
-                    <span className="text-gold">{money(row.overrideEarnings)}</span>
+                    <span className="text-gold">
+                      {money(row.overrideEarnings)}
+                    </span>
                   ) : (
                     <span className="text-muted/50">—</span>
                   )}
@@ -168,7 +168,7 @@ export default async function AffiliatesPage({
 
       <Card title="Partners">
         {tree.length === 0 ? (
-          <div className="py-10 text-center text-[13px] text-muted/70">
+          <div className="py-10 text-center text-[13px] text-muted">
             No affiliates in the registry yet. Add partners to the affiliate
             sheet, or check that the hourly sync is running.
           </div>
@@ -177,19 +177,20 @@ export default async function AffiliatesPage({
             {tree.map(({ am, sams }) => (
               <div
                 key={am.affiliateId}
-                className="rounded-lg border border-hairline bg-ink/30 p-4"
+                className="rounded-lg border border-cardline bg-nested p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-bright">{am.name}</span>
                       <TierBadge tier={am.tier} />
-                      <span className="text-[10px] uppercase tracking-wider text-muted/60">
+                      <span className="text-[10px] uppercase tracking-wider text-muted">
                         AM
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-muted/70">
-                      Own: {am.directDeals} deals · {compactMoney(am.directFunded)}
+                    <div className="mt-1 text-[11px] text-muted">
+                      Own: {am.directDeals} deals ·{" "}
+                      {compactMoney(am.directFunded)}
                       {" · "}
                       Downline: {am.downlineDeals} deals ·{" "}
                       {compactMoney(am.downlineFunded)}
@@ -199,7 +200,7 @@ export default async function AffiliatesPage({
                     <div className="tnum font-display text-xl text-bright">
                       {money(am.totalEarnings)}
                     </div>
-                    <div className="text-[11px] text-muted/70">
+                    <div className="text-[11px] text-muted">
                       {money(am.directEarnings)} direct ·{" "}
                       <span className="text-gold">
                         {money(am.overrideEarnings)} override
@@ -209,32 +210,34 @@ export default async function AffiliatesPage({
                 </div>
 
                 {sams.length > 0 && (
-                  <div className="mt-4 space-y-2 border-l-2 border-hairline pl-4">
+                  <div className="mt-4 space-y-2 border-l-2 border-cardline pl-4">
                     {sams.map((sam) => (
                       <div
                         key={sam.affiliateId}
-                        className="flex items-center justify-between gap-3 rounded bg-raised/40 px-3 py-2"
+                        className="flex items-center justify-between gap-3 rounded bg-surface px-3 py-2"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-muted/40">↳</span>
-                          <span className="text-[13px] text-bright/90">
+                          <span className="text-muted/50">↳</span>
+                          <span className="text-[13px] text-bright">
                             {sam.name}
                           </span>
                           <TierBadge tier={sam.tier} />
-                          <span className="text-[10px] uppercase tracking-wider text-muted/60">
+                          <span className="text-[10px] uppercase tracking-wider text-muted">
                             SAM
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-[12px]">
-                          <span className="tnum text-muted/70">
+                          <span className="tnum text-muted">
                             {sam.directDeals}d · {compactMoney(sam.directFunded)}
                           </span>
                           <span className="tnum font-semibold text-bright">
-                            {sam.directEarnings > 0
-                              ? money(sam.directEarnings)
-                              : sam.pendingEarnings > 0
-                                ? <Pending />
-                                : "—"}
+                            {sam.directEarnings > 0 ? (
+                              money(sam.directEarnings)
+                            ) : sam.pendingEarnings > 0 ? (
+                              <Pending />
+                            ) : (
+                              "—"
+                            )}
                           </span>
                         </div>
                       </div>
