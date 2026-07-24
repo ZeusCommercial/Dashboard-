@@ -114,15 +114,29 @@ export function ColumnChart({
   rows: { label: string; value: number; display: string }[];
   height?: number;
 }) {
-  const max = Math.max(...rows.map((r) => r.value), 1);
+  // Guard against rows arriving with a mismatched shape — a NaN max would
+  // flatten every bar to the minimum height instead of scaling.
+  const values = rows.map((r) => (Number.isFinite(r.value) ? r.value : 0));
+  const max = Math.max(...values, 1);
+
+  if (!rows.length) {
+    return (
+      <div
+        className="flex items-center justify-center text-[13px] text-muted"
+        style={{ height }}
+      >
+        No data for this selection
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="flex items-end gap-2" style={{ height }}>
-        {rows.map((r) => (
+        {rows.map((r, i) => (
           <div
-            key={r.label}
-            className="group flex flex-1 flex-col items-center justify-end gap-2"
+            key={`${r.label}-${i}`}
+            className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
           >
             <span className="tnum text-[11px] font-semibold text-bright opacity-0 transition-opacity group-hover:opacity-100">
               {r.display}
@@ -130,7 +144,7 @@ export function ColumnChart({
             <div
               className="w-full rounded-t-md bg-gradient-to-t from-goldDim/40 to-gold transition-all group-hover:from-goldDim group-hover:to-gold"
               style={{
-                height: `${Math.max((r.value / max) * 100, 2)}%`,
+                height: `${Math.max((values[i] / max) * 100, 2)}%`,
                 minHeight: 3,
               }}
             />
@@ -138,10 +152,10 @@ export function ColumnChart({
         ))}
       </div>
       <div className="mt-2.5 flex gap-2 border-t border-cardline pt-2.5">
-        {rows.map((r) => (
+        {rows.map((r, i) => (
           <div
-            key={r.label}
-            className="flex-1 text-center text-[10px] uppercase tracking-wide text-muted"
+            key={`${r.label}-label-${i}`}
+            className="min-w-0 flex-1 text-center text-[10px] uppercase tracking-wide text-muted"
           >
             {r.label}
           </div>
