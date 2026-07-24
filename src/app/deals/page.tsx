@@ -1,12 +1,6 @@
-import { BarList, Card, KpiCard, Table, Td } from "@/components/ui";
+import { Card, KpiCard, Table, Td } from "@/components/ui";
 import { PipelineFilter } from "@/components/PipelineFilter";
-import {
-  compactMoney,
-  loadDataset,
-  pct,
-  pipelineByStage,
-  staleDeals,
-} from "@/lib/metrics";
+import { compactMoney, loadDataset, pct } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +10,17 @@ export default async function DealsPage({
   searchParams: { pipeline?: string };
 }) {
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
-  const stages = pipelineByStage(data);
-  const stale = staleDeals(data, 21);
 
   const openDeals = data.deals.filter((d) => d.stage !== "Funded");
   const openValue = openDeals.reduce((s, d) => s + d.amount, 0);
-  const stageVolume = stages.reduce((s, x) => s + x.value, 0);
-  const stalePipelineValue = stale.reduce((s, d) => s + d.amount, 0);
-
   const noValue = data.deals.filter((d) => !d.amount).length;
+
+  // How many deals resolve to a real partner rather than falling through to
+  // the "unattributed" bucket — the health check on the whole tracking chain.
+  const attributed = data.deals.filter(
+    (d) => d.affiliateId && d.affiliateId !== "unattributed"
+  ).length;
+  const coverage = data.deals.length ? attributed / data.deals.length : 0;
 
   return (
     <main className="space-y-6">
@@ -57,9 +53,9 @@ export default async function DealsPage({
           hint="Excludes funded deals"
         />
         <KpiCard
-          label="Stale Deals"
-          value={`${stale.length}`}
-          hint={`${compactMoney(stalePipelineValue)} at risk`}
+          label="Attribution Coverage"
+          value={pct(coverage)}
+          hint={`${attributed} of ${data.deals.length} traced to a partner`}
         />
         <KpiCard
           label="Missing Amount"
@@ -67,23 +63,6 @@ export default async function DealsPage({
           hint="Deals with no monetary value set"
         />
       </div>
-
-      <Card
-        title="Stage Breakdown"
-        subtitle={`${compactMoney(stageVolume)} across ${stages.reduce(
-          (s, x) => s + x.count,
-          0
-        )} deals`}
-      >
-        <BarList
-          rows={stages.map((s) => ({
-            label: s.stage,
-            value: s.value,
-            display: compactMoney(s.value),
-            sub: stageVolume > 0 ? pct(s.value / stageVolume) : `${s.count}`,
-          }))}
-        />
-      </Card>
 
       <Card title="All Deals" subtitle={`${data.deals.length} in this pipeline`}>
         {data.deals.length === 0 ? (
@@ -123,47 +102,6 @@ export default async function DealsPage({
                   </Td>
                 </tr>
               ))}
-          </Table>
-        )}
-      </Card>
-
-      <Card
-        title="Stale Deals"
-        subtitle={`Open deals with no stage movement in 21+ days${
-          stale.length ? ` — ${compactMoney(stalePipelineValue)} at risk` : ""
-        }`}
-      >
-        {stale.length === 0 ? (
-          <div className="py-10 text-center text-[13px] text-muted/70">
-            No stale deals. Pipeline is moving.
-          </div>
-        ) : (
-          <Table head={["Deal", "Stage", "Amount", "Days Idle"]}>
-            {stale.slice(0, 25).map((deal) => (
-              <tr key={deal.id} className="border-b border-hairline/60">
-                <Td align="left">
-                  <div className="font-medium text-bright">{deal.name}</div>
-                  <div className="text-[11px] text-muted/60">{deal.id}</div>
-                </Td>
-                <Td>
-                  <span className="rounded bg-raised px-2 py-0.5 text-[11px] text-muted">
-                    {deal.stage}
-                  </span>
-                </Td>
-                <Td>{compactMoney(deal.amount)}</Td>
-                <Td>
-                  <span
-                    className={
-                      deal.idleDays >= 45
-                        ? "font-semibold text-loss"
-                        : "text-bright"
-                    }
-                  >
-                    {deal.idleDays}d
-                  </span>
-                </Td>
-              </tr>
-            ))}
           </Table>
         )}
       </Card>
