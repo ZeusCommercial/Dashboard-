@@ -26,14 +26,12 @@ export default async function DealsPage({
     <main className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-bright">Deals</h1>
-        <p className="mt-1 text-[13px] text-muted">
-          Deal-level view of the selected pipeline.
-        </p>
+        
       </div>
 
       {data.pipelines.length > 0 && (
         <div className="flex items-center justify-between">
-          <div className="text-[13px] text-muted">Filter by pipeline:</div>
+          <div className="text-[13px] text-muted"></div>
           <PipelineFilter
             pipelines={data.pipelines}
             current={data.pipelineFilter}
