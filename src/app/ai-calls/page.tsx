@@ -148,8 +148,8 @@ function Metric({
   warn?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-hairline bg-ink/40 p-4">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
+    <div className="rounded-lg border border-cardline bg-nested p-4">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gold">
         {label}
       </div>
       <div
@@ -157,7 +157,7 @@ function Metric({
       >
         {value}
       </div>
-      {note && <div className="mt-1.5 text-[11px] text-muted/70">{note}</div>}
+      {note && <div className="mt-1.5 text-[11px] text-muted">{note}</div>}
     </div>
   );
 }
