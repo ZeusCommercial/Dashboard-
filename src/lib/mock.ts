@@ -72,6 +72,11 @@ export type MockDeal = {
   createdAt: string;
   updatedAt: string;
   netBrokerFee: number | null;
+  /** Set by the live loader; used to scope leads-over-time to a pipeline. */
+  contactId?: string | null;
+  /** Real GHL stage order, so charts sort correctly per pipeline. */
+  stagePosition?: number;
+  pipelineId?: string | null;
 };
 
 function daysAgo(n: number): string {
@@ -102,6 +107,12 @@ export function mockDeals(count = 148): MockDeal[] {
     else if (stageRoll < 0.84) stage = "Offer Presented";
     else stage = "Funded";
 
+    // Mirrors what the live loader derives from GHL stage positions, so mock
+    // and live data render through the same ordering path.
+    const stagePosition = MOCK_STAGES.indexOf(
+      stage as (typeof MOCK_STAGES)[number]
+    );
+
     const createdDaysAgo = between(1, 180);
     const updatedDaysAgo = Math.max(0, createdDaysAgo - between(0, 40));
 
@@ -111,6 +122,9 @@ export function mockDeals(count = 148): MockDeal[] {
       amount,
       stage,
       affiliateId: affiliate.id,
+      contactId: `con_${between(0, 640)}`,
+      stagePosition,
+      pipelineId: null,
       createdAt: daysAgo(createdDaysAgo),
       updatedAt: daysAgo(updatedDaysAgo),
       netBrokerFee: null,
