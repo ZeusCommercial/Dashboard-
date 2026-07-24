@@ -1,49 +1,39 @@
-import {
-  Banner,
-  BarList,
-  Card,
-  ColumnChart,
-  KpiCard,
-  Table,
-  Td,
-} from "@/components/ui";
+import { BarList, Card, KpiCard, Table, Td } from "@/components/ui";
 import { PipelineFilter } from "@/components/PipelineFilter";
 import {
   compactMoney,
-  leadsOverTime,
   loadDataset,
-  overviewKpis,
+  pct,
   pipelineByStage,
-  revenueByMonth,
   staleDeals,
 } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 
-export default async function OverviewPage({
+export default async function DealsPage({
   searchParams,
 }: {
   searchParams: { pipeline?: string };
 }) {
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
-  const kpis = overviewKpis(data);
-  const revenue = revenueByMonth(data);
   const stages = pipelineByStage(data);
-  const leads = leadsOverTime(data);
   const stale = staleDeals(data, 21);
 
-  const totalPipeline = stages.reduce((s, x) => s + x.value, 0);
+  const openDeals = data.deals.filter((d) => d.stage !== "Funded");
+  const openValue = openDeals.reduce((s, d) => s + d.amount, 0);
+  const stageVolume = stages.reduce((s, x) => s + x.value, 0);
   const stalePipelineValue = stale.reduce((s, d) => s + d.amount, 0);
+
+  const noValue = data.deals.filter((d) => !d.amount).length;
 
   return (
     <main className="space-y-6">
-      {data.isMock && (
-        <Banner tone="warn">
-          <strong>Demo mode.</strong> GHL credentials are not configured yet, so
-          numbers below are illustrative. Add <code>GHL_PRIVATE_TOKEN</code> and{" "}
-          <code>GHL_LOCATION_ID</code> in Render to switch to live data.
-        </Banner>
-      )}
+      <div>
+        <h1 className="font-display text-2xl text-bright">Deals</h1>
+        <p className="mt-1 text-[13px] text-muted">
+          Deal-level view of the selected pipeline.
+        </p>
+      </div>
 
       {data.pipelines.length > 0 && (
         <div className="flex items-center justify-between">
@@ -56,97 +46,127 @@ export default async function OverviewPage({
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((k) => (
-          <KpiCard key={k.label} {...k} />
-        ))}
+        <KpiCard
+          label="Total Deals"
+          value={`${data.deals.length}`}
+          hint={`${openDeals.length} still open`}
+        />
+        <KpiCard
+          label="Open Value"
+          value={compactMoney(openValue)}
+          hint="Excludes funded deals"
+        />
+        <KpiCard
+          label="Stale Deals"
+          value={`${stale.length}`}
+          hint={`${compactMoney(stalePipelineValue)} at risk`}
+        />
+        <KpiCard
+          label="Missing Amount"
+          value={`${noValue}`}
+          hint="Deals with no monetary value set"
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card
-          title="Revenue Funded"
-          subtitle="Trailing 6 months"
-          className="lg:col-span-2"
-        >
-          <ColumnChart
-            rows={revenue.map((r) => ({
-              label: r.month,
-              value: r.revenue,
-              display: compactMoney(r.revenue),
-            }))}
-          />
-        </Card>
+      <Card
+        title="Stage Breakdown"
+        subtitle={`${compactMoney(stageVolume)} across ${stages.reduce(
+          (s, x) => s + x.count,
+          0
+        )} deals`}
+      >
+        <BarList
+          rows={stages.map((s) => ({
+            label: s.stage,
+            value: s.value,
+            display: compactMoney(s.value),
+            sub: stageVolume > 0 ? pct(s.value / stageVolume) : `${s.count}`,
+          }))}
+        />
+      </Card>
 
-        <Card
-          title="Pipeline by Stage"
-          subtitle={`${compactMoney(totalPipeline)} across ${stages.reduce(
-            (s, x) => s + x.count,
-            0
-          )} deals`}
-        >
-          <BarList
-            rows={stages.map((s) => ({
-              label: s.stage,
-              value: s.value,
-              display: compactMoney(s.value),
-              sub: `${s.count}`,
-            }))}
-          />
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card
-          title="Stale Deals"
-          subtitle={`No stage movement in 21+ days${
-            stale.length ? ` — ${compactMoney(stalePipelineValue)} at risk` : ""
-          }`}
-          className="lg:col-span-2"
-        >
-          {stale.length === 0 ? (
-            <div className="py-10 text-center text-[13px] text-muted/70">
-              No stale deals. Pipeline is moving.
-            </div>
-          ) : (
-            <Table head={["Deal", "Stage", "Amount", "Days Idle"]}>
-              {stale.slice(0, 8).map((deal) => (
+      <Card title="All Deals" subtitle={`${data.deals.length} in this pipeline`}>
+        {data.deals.length === 0 ? (
+          <div className="py-10 text-center text-[13px] text-muted/70">
+            No deals in this pipeline.
+          </div>
+        ) : (
+          <Table head={["Deal", "Stage", "Amount", "Updated"]}>
+            {[...data.deals]
+              .sort((a, b) => b.amount - a.amount)
+              .slice(0, 50)
+              .map((deal) => (
                 <tr key={deal.id} className="border-b border-hairline/60">
                   <Td align="left">
                     <div className="font-medium text-bright">{deal.name}</div>
+                    <div className="text-[11px] text-muted/60">{deal.id}</div>
                   </Td>
                   <Td>
                     <span className="rounded bg-raised px-2 py-0.5 text-[11px] text-muted">
                       {deal.stage}
                     </span>
                   </Td>
-                  <Td>{compactMoney(deal.amount)}</Td>
                   <Td>
-                    <span
-                      className={
-                        deal.idleDays >= 45
-                          ? "font-semibold text-loss"
-                          : "text-bright"
-                      }
-                    >
-                      {deal.idleDays}d
+                    {deal.amount ? (
+                      compactMoney(deal.amount)
+                    ) : (
+                      <span className="text-muted/50">—</span>
+                    )}
+                  </Td>
+                  <Td>
+                    <span className="text-muted/70">
+                      {new Date(deal.updatedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </span>
                   </Td>
                 </tr>
               ))}
-            </Table>
-          )}
-        </Card>
+          </Table>
+        )}
+      </Card>
 
-        <Card title="Leads Over Time" subtitle="New contacts per week">
-          <ColumnChart
-            rows={leads.map((l) => ({
-              label: l.week,
-              value: l.leads,
-              display: `${l.leads}`,
-            }))}
-            height={170}
-          />
-        </Card>
-      </div>
+      <Card
+        title="Stale Deals"
+        subtitle={`Open deals with no stage movement in 21+ days${
+          stale.length ? ` — ${compactMoney(stalePipelineValue)} at risk` : ""
+        }`}
+      >
+        {stale.length === 0 ? (
+          <div className="py-10 text-center text-[13px] text-muted/70">
+            No stale deals. Pipeline is moving.
+          </div>
+        ) : (
+          <Table head={["Deal", "Stage", "Amount", "Days Idle"]}>
+            {stale.slice(0, 25).map((deal) => (
+              <tr key={deal.id} className="border-b border-hairline/60">
+                <Td align="left">
+                  <div className="font-medium text-bright">{deal.name}</div>
+                  <div className="text-[11px] text-muted/60">{deal.id}</div>
+                </Td>
+                <Td>
+                  <span className="rounded bg-raised px-2 py-0.5 text-[11px] text-muted">
+                    {deal.stage}
+                  </span>
+                </Td>
+                <Td>{compactMoney(deal.amount)}</Td>
+                <Td>
+                  <span
+                    className={
+                      deal.idleDays >= 45
+                        ? "font-semibold text-loss"
+                        : "text-bright"
+                    }
+                  >
+                    {deal.idleDays}d
+                  </span>
+                </Td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Card>
     </main>
   );
 }
