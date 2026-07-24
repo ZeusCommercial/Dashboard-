@@ -83,7 +83,7 @@ export default async function AiCallsPage({
             rows={weekly.map((w) => ({
               label: w.week,
               value: w.calls,
-              display: `${w.calls} (${w.booked} booked)`,
+              display: `${w.calls}`,
             }))}
           />
         </Card>
