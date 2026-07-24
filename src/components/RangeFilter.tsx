@@ -1,5 +1,4 @@
 "use client";
-
 import { useRouter, useSearchParams } from "next/navigation";
 
 const OPTIONS = [
@@ -23,10 +22,10 @@ export default function RangeFilter() {
         else p.delete("range");
         router.push(`?${p.toString()}`);
       }}
-      className="rounded-lg border border-hairline bg-ink/40 px-3 py-1.5 text-[13px] text-bright"
+      className="rounded-lg border border-hairline bg-surface px-3 py-1.5 text-[13px] text-bright outline-none focus:border-gold/50"
     >
       {OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
+        <option key={o.value} value={o.value} className="bg-surface text-bright">
           {o.label}
         </option>
       ))}
