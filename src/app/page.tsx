@@ -47,7 +47,7 @@ export default async function OverviewPage({
 
       {data.pipelines.length > 0 && (
         <div className="flex items-center justify-between">
-          <div className="text-[13px] text-muted">Filter by pipeline:</div>
+          <div className="text-[13px] text-muted"></div>
           <PipelineFilter
             pipelines={data.pipelines}
             current={data.pipelineFilter}
