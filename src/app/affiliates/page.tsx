@@ -44,7 +44,7 @@ export default async function AffiliatesPage({
   return (
     <main className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl text-bright">Partner Network</h1>
+        <h1 className="font-display text-2xl text-bright">PARTNERS</h1>
        
       </div>
 
