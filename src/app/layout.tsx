@@ -26,15 +26,18 @@ export default function RootLayout({
       <body className="min-h-screen bg-page font-sans text-ink antialiased">
         <div className="mx-auto max-w-[1400px] px-6 py-6">
           <header className="mb-7 flex flex-wrap items-center justify-between gap-4 border-b border-ink/15 pb-5">
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-3">
               <Image
                 src="/zeus-logo.png"
-                alt="Zeus Commercial Capital LLC"
-                width={680}
-                height={340}
+                alt=""
+                width={250}
+                height={250}
                 priority
-                className="h-12 w-auto"
+                className="h-9 w-auto"
               />
+              <span className="whitespace-nowrap font-display text-[19px] leading-none text-bright">
+                Zeus Commercial Capital
+              </span>
             </Link>
             <div className="flex items-center gap-5">
               <nav className="flex gap-1">
@@ -52,9 +55,6 @@ export default function RootLayout({
             </div>
           </header>
           {children}
-          <footer className="mt-10 border-t border-ink/15 pt-5 text-[11px] text-ink/45">
-            Zeus Commercial Capital
-          </footer>
         </div>
       </body>
     </html>
