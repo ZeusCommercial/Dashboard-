@@ -4,17 +4,18 @@ import {
   Card,
   ColumnChart,
   KpiCard,
+  Table,
+  Td,
 } from "@/components/ui";
 import { PipelineFilter } from "@/components/PipelineFilter";
 import {
   compactMoney,
-  dealSizeDistribution,
   leadsOverTime,
   loadDataset,
-  money,
   overviewKpis,
   pipelineByStage,
   revenueByMonth,
+  staleDeals,
 } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +29,11 @@ export default async function OverviewPage({
   const kpis = overviewKpis(data);
   const revenue = revenueByMonth(data);
   const stages = pipelineByStage(data);
-  const bands = dealSizeDistribution(data);
   const leads = leadsOverTime(data);
+  const stale = staleDeals(data, 21);
 
   const totalPipeline = stages.reduce((s, x) => s + x.value, 0);
-  const bandedDeals = bands.reduce((s, b) => s + b.count, 0);
+  const stalePipelineValue = stale.reduce((s, d) => s + d.amount, 0);
 
   return (
     <main className="space-y-6">
@@ -95,18 +96,44 @@ export default async function OverviewPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
-          title="Deal Size Distribution"
-          subtitle={`${bandedDeals} funded deals by Tier 1 commission band`}
+          title="Stale Deals"
+          subtitle={`No stage movement in 21+ days${
+            stale.length ? ` — ${compactMoney(stalePipelineValue)} at risk` : ""
+          }`}
           className="lg:col-span-2"
         >
-          <BarList
-            rows={bands.map((b) => ({
-              label: `${b.label} — ${money(b.payout)} payout`,
-              value: b.count,
-              display: `${b.count}`,
-              sub: compactMoney(b.volume),
-            }))}
-          />
+          {stale.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-muted/70">
+              No stale deals. Pipeline is moving.
+            </div>
+          ) : (
+            <Table head={["Deal", "Stage", "Amount", "Days Idle"]}>
+              {stale.slice(0, 8).map((deal) => (
+                <tr key={deal.id} className="border-b border-hairline/60">
+                  <Td align="left">
+                    <div className="font-medium text-bright">{deal.name}</div>
+                  </Td>
+                  <Td>
+                    <span className="rounded bg-raised px-2 py-0.5 text-[11px] text-muted">
+                      {deal.stage}
+                    </span>
+                  </Td>
+                  <Td>{compactMoney(deal.amount)}</Td>
+                  <Td>
+                    <span
+                      className={
+                        deal.idleDays >= 45
+                          ? "font-semibold text-loss"
+                          : "text-bright"
+                      }
+                    >
+                      {deal.idleDays}d
+                    </span>
+                  </Td>
+                </tr>
+              ))}
+            </Table>
+          )}
         </Card>
 
         <Card title="Leads Over Time" subtitle="New contacts per week">
