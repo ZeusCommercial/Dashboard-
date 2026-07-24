@@ -1,10 +1,20 @@
-import { Card, KpiCard, Pending, Table, Td, TierBadge } from "@/components/ui";
+import {
+  BarList,
+  Card,
+  KpiCard,
+  Pending,
+  Table,
+  Td,
+  TierBadge,
+} from "@/components/ui";
 import {
   affiliateTree,
   commissionTable,
   compactMoney,
+  dealSizeDistribution,
   loadDataset,
   money,
+  pct,
 } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +27,7 @@ export default async function AffiliatesPage({
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const totals = commissionTable(data);
   const tree = affiliateTree(data);
+  const dist = dealSizeDistribution(data);
 
   const totalOwed = totals.reduce((s, r) => s + r.totalEarnings, 0);
   const totalOverrides = totals.reduce((s, r) => s + r.overrideEarnings, 0);
@@ -24,11 +35,18 @@ export default async function AffiliatesPage({
   const totalPending = totals.reduce((s, r) => s + r.pendingEarnings, 0);
   const totalFunded = totals.reduce((s, r) => s + r.directFunded, 0);
 
+  // Tier 1 payouts are a pure function of funded amount bands, so they're
+  // derived from the distribution rather than the per-affiliate rollup.
+  const tier1Payout = dist.reduce((s, d) => s + d.count * d.payout, 0);
+  const bandVolume = dist.reduce((s, d) => s + d.volume, 0);
+  const bandDeals = dist.reduce((s, d) => s + d.count, 0);
+
   return (
     <main className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-bright">Partner Network</h1>
         <p className="mt-1 text-[13px] text-muted">
+          Commission rollup across all pipelines.
         </p>
       </div>
 
@@ -39,9 +57,9 @@ export default async function AffiliatesPage({
           hint={`${totals.length} partners`}
         />
         <KpiCard
-          label="Direct Earnings"
-          value={money(totalDirect)}
-          hint="Own funded deals"
+          label="Tier 1 Payout Total"
+          value={money(tier1Payout)}
+          hint="Band-based earnings, Tier 1 only"
         />
         <KpiCard
           label="Override Earnings"
@@ -51,8 +69,48 @@ export default async function AffiliatesPage({
         <KpiCard
           label="Volume Attributed"
           value={compactMoney(totalFunded)}
-          hint={totalPending > 0 ? `${totalPending} Tier 2 deals pending` : undefined}
+          hint={
+            totalPending > 0
+              ? `${totalPending} Tier 2 deals pending`
+              : `${money(totalDirect)} direct earnings`
+          }
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card
+          title="Deal Size Distribution"
+          subtitle={`${bandDeals} funded deals across Tier 1 bands`}
+        >
+          <Table head={["Band", "Payout", "Deals", "Volume"]}>
+            {dist.map((row) => (
+              <tr key={row.label} className="border-b border-hairline/60">
+                <Td align="left">
+                  <span className="font-medium text-bright">{row.label}</span>
+                </Td>
+                <Td>
+                  <span className="text-gold">{money(row.payout)}</span>
+                </Td>
+                <Td>{row.count}</Td>
+                <Td>{compactMoney(row.volume)}</Td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
+
+        <Card
+          title="Volume Share by Band"
+          subtitle="Where funded volume concentrates"
+        >
+          <BarList
+            rows={dist.map((d) => ({
+              label: d.label,
+              value: d.volume,
+              display: compactMoney(d.volume),
+              sub: bandVolume > 0 ? pct(d.volume / bandVolume) : "",
+            }))}
+          />
+        </Card>
       </div>
 
       <Card title="Top Producers" subtitle="Sorted by funded volume">
@@ -110,16 +168,13 @@ export default async function AffiliatesPage({
         )}
       </Card>
 
-      <Card
-        title=" Hierarchy"
-        
-      >
+      <Card title="Hierarchy" subtitle="AM → SAM rollup">
         {tree.length === 0 ? (
-        <div className="py-10 text-center text-[13px] text-muted/70">
-           No affiliates in the registry yet. Add partners to the
-        affiliate sheet, or check that the hourly sync is running.
-       </div>
-          ) : (
+          <div className="py-10 text-center text-[13px] text-muted/70">
+            No affiliates in the registry yet. Add partners to the affiliate
+            sheet, or check that the hourly sync is running.
+          </div>
+        ) : (
           <div className="space-y-4">
             {tree.map(({ am, sams }) => (
               <div
