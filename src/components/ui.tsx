@@ -165,6 +165,206 @@ export function ColumnChart({
   );
 }
 
+export function ComboChart({
+  rows,
+  height = 180,
+  lineLabel = "Deals",
+}: {
+  rows: {
+    key: string;
+    label: string;
+    full: string;
+    bar: number;
+    barDisplay: string;
+    line: number | null;
+    lineDisplay: string;
+  }[];
+  height?: number;
+  lineLabel?: string;
+}) {
+  const maxBar = Math.max(...rows.map((r) => r.bar), 1);
+  const maxLine = Math.max(...rows.map((r) => r.line ?? 0), 1);
+
+  if (!rows.length || rows.every((r) => r.bar === 0)) {
+    return (
+      <div
+        className="flex items-center justify-center text-[13px] text-muted/70"
+        style={{ height }}
+      >
+        No funded deals yet
+      </div>
+    );
+  }
+
+  const plotH = height - 26;
+  const slot = 100 / rows.length;
+
+  const points = rows
+    .map((r, i) =>
+      r.line === null
+        ? null
+        : `${slot * i + slot / 2},${plotH - (r.line / maxLine) * plotH * 0.8}`
+    )
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div>
+      <div className="relative" style={{ height: plotH }}>
+        {[0.25, 0.5, 0.75, 1].map((t) => (
+          <div
+            key={t}
+            className="absolute inset-x-0 border-t border-hairline/40"
+            style={{ bottom: `${t * 100}%` }}
+          />
+        ))}
+
+        <div className="absolute inset-0 flex items-end">
+          {rows.map((r) => (
+            <div key={r.key} className="group flex flex-1 justify-center">
+              <div
+                className="w-full max-w-[44px] rounded-t bg-gold transition-opacity group-hover:opacity-80"
+                style={{
+                  height: `${(r.bar / maxBar) * 80}%`,
+                  minHeight: r.bar > 0 ? 3 : 0,
+                }}
+                title={`${r.full}: ${r.barDisplay} · ${r.lineDisplay} ${lineLabel.toLowerCase()}`}
+              />
+            </div>
+          ))}
+        </div>
+
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox={`0 0 100 ${plotH}`}
+          preserveAspectRatio="none"
+        >
+          <polyline
+            points={points}
+            fill="none"
+            stroke="#8DA2C0"
+            strokeWidth="1.5"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      </div>
+
+      <div className="mt-2 flex">
+        {rows.map((r) => (
+          <div
+            key={r.key}
+            className="flex-1 text-center text-[11px] uppercase tracking-wide text-muted/70"
+          >
+            {r.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const APPROVAL_SERIES = [
+  { key: "submitted", name: "Submitted", color: "#3B5A8C" },
+  { key: "approved", name: "Approved", color: "#E8A33D" },
+  { key: "declined", name: "Declined", color: "#8C4A4A" },
+] as const;
+
+export function GroupedBarChart({
+  rows,
+  height = 190,
+}: {
+  rows: {
+    label: string;
+    full: string;
+    values: Record<string, number>;
+    rate: number | null;
+  }[];
+  height?: number;
+}) {
+  const max = Math.max(
+    ...rows.flatMap((r) => APPROVAL_SERIES.map((s) => r.values[s.key] ?? 0)),
+    1
+  );
+
+  if (
+    !rows.length ||
+    rows.every((r) => APPROVAL_SERIES.every((s) => !r.values[s.key]))
+  ) {
+    return (
+      <div
+        className="flex items-center justify-center text-[13px] text-muted/70"
+        style={{ height }}
+      >
+        No submissions in this window
+      </div>
+    );
+  }
+
+  const plotH = height - 46;
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-muted">
+        {APPROVAL_SERIES.map((s) => (
+          <span key={s.key} className="flex items-center gap-1.5">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: s.color }}
+            />
+            {s.name}
+          </span>
+        ))}
+      </div>
+
+      <div className="relative flex items-end" style={{ height: plotH }}>
+        {[0.33, 0.66, 1].map((t) => (
+          <div
+            key={t}
+            className="absolute inset-x-0 border-t border-hairline/40"
+            style={{ bottom: `${t * 100}%` }}
+          />
+        ))}
+
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="flex h-full flex-1 items-end justify-center gap-[3px]"
+          >
+            {APPROVAL_SERIES.map((s) => {
+              const v = r.values[s.key] ?? 0;
+              return (
+                <div
+                  key={s.key}
+                  className="w-[22%] max-w-[18px] rounded-t"
+                  style={{
+                    height: `${(v / max) * 82}%`,
+                    minHeight: v > 0 ? 3 : 0,
+                    background: s.color,
+                  }}
+                  title={`${r.full} — ${s.name}: ${v}${
+                    r.rate !== null ? ` · ${r.rate.toFixed(0)}% approved` : ""
+                  }`}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="flex-1 text-center text-[11px] uppercase tracking-wide text-muted/70"
+          >
+            {r.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Table({
   head,
   children,
