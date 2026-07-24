@@ -5,15 +5,15 @@ const config: Config = {
   theme: {
     extend: {
      colors: {
-        page: "#F1F3F6",
-        surface: "#12294B",    // card background — dark navy
+        page: "#061426",       // deep navy page
+        surface: "#12294B",    // cards — one step lighter
+        hairline: "#1E3A5F",   // card border — visible against #061426
+        ink: "#E8ECF2",        // text on the page (nav, footer) — now LIGHT
         nested: "#1B3358",     // sub-cards / tracks inside cards
-        hairline: "#E2E5EA",   // 1px card border on light bg
         cardline: "#274068",   // dividers inside dark cards
         bright: "#FFFFFF",     // numbers / primary text in cards
         soft: "#E8ECF2",       // body text in cards
         muted: "#93A7C4",      // secondary text in cards
-        ink: "#0B2444",        // dark text on the light page (nav, footer)
         gold: "#F5A524",
         goldDim: "#C07F12",
         gain: "#34D399",       // light green — on dark cards again
