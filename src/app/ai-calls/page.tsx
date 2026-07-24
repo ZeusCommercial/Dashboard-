@@ -44,7 +44,7 @@ export default async function AiCallsPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl text-bright">
-            Samantha AI Call Analytics
+            Samantha AI Calls
           </h1>
         </div>
         <RangeFilter />
