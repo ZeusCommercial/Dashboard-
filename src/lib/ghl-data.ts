@@ -208,13 +208,19 @@ export async function loadLiveDataset(opts: {
       getVoiceAiCalls({ pageSize: 50, maxPages: 50 }),
     ]);
 
-  // Build a stage-id -> stage-name map across every pipeline. Opportunities
-  // reference stage by ID, not name, so we resolve here.
+  // Build stage-id -> name and stage-id -> position maps across every pipeline.
+  // Opportunities reference stage by ID, not name, so we resolve here. Position
+  // drives chart ordering so "Pipeline by Stage" follows the real GHL order for
+  // whichever pipeline is selected, rather than a hardcoded list.
   const stageIdToName = new Map<string, string>();
+  const stageIdToPosition = new Map<string, number>();
   const pipelineIdToName = new Map<string, string>();
   for (const p of pipelines) {
     pipelineIdToName.set(p.id, p.name);
-    for (const s of p.stages) stageIdToName.set(s.id, s.name);
+    p.stages.forEach((s, i) => {
+      stageIdToName.set(s.id, s.name);
+      stageIdToPosition.set(s.id, (s as { position?: number }).position ?? i);
+    });
   }
 
   // Index contacts by id so deal → contact lookup is O(1) rather than a scan.
@@ -232,6 +238,11 @@ export async function loadLiveDataset(opts: {
       amount: Number(o.monetaryValue ?? 0),
       stage: isFundedStageName(stageName) ? "Funded" : stageName,
       affiliateId: affiliateId ?? "unattributed",
+      // Carried through so leadsOverTime() can narrow contacts to the
+      // selected pipeline, and so stage charts sort in real pipeline order.
+      contactId: o.contactId ?? null,
+      stagePosition: stageIdToPosition.get(o.pipelineStageId ?? "") ?? 999,
+      pipelineId: o.pipelineId ?? null,
       createdAt: o.createdAt ?? new Date().toISOString(),
       updatedAt:
         o.updatedAt ?? o.lastStatusChangeAt ?? o.createdAt ?? new Date().toISOString(),
