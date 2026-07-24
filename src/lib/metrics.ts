@@ -12,6 +12,11 @@ import { hasLiveCredentials, loadLiveDataset } from "./ghl-data";
 
 export const FUNDED_STAGE = "Funded";
 
+/** Matches "Funded", "funded / closed", "Funded/Closed", etc. */
+export function isFundedStage(stage: string): boolean {
+  return (stage ?? "").toLowerCase().includes("funded");
+}
+
 export function money(n: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -51,7 +56,6 @@ export async function loadDataset(opts: {
   pipelineId?: string | null;
 } = {}): Promise<Dataset> {
   if (!hasLiveCredentials()) {
-    // Fallback to mock when credentials are missing
     return {
       deals: mockDeals(),
       contacts: mockContacts(),
@@ -97,7 +101,7 @@ export type Kpi = {
 };
 
 export function overviewKpis(d: Dataset): Kpi[] {
-  const funded = d.deals.filter((x) => x.stage === FUNDED_STAGE);
+  const funded = d.deals.filter((x) => isFundedStage(x.stage));
   const totalFunded = funded.reduce((s, x) => s + x.amount, 0);
 
   const now = new Date();
@@ -118,7 +122,7 @@ export function overviewKpis(d: Dataset): Kpi[] {
       ? (thisMonthFunded - prevMonthFunded) / prevMonthFunded
       : null;
 
-  const openDeals = d.deals.filter((x) => x.stage !== FUNDED_STAGE);
+  const openDeals = d.deals.filter((x) => !isFundedStage(x.stage));
   const pipelineValue = openDeals.reduce((s, x) => s + x.amount, 0);
 
   const commissionRows = commissionTable(d);
@@ -157,7 +161,7 @@ export function overviewKpis(d: Dataset): Kpi[] {
 export function revenueByMonth(d: Dataset) {
   const map = new Map<string, number>();
   for (const deal of d.deals) {
-    if (deal.stage !== FUNDED_STAGE) continue;
+    if (!isFundedStage(deal.stage)) continue;
     const k = monthKey(deal.updatedAt);
     map.set(k, (map.get(k) ?? 0) + deal.amount);
   }
@@ -167,27 +171,39 @@ export function revenueByMonth(d: Dataset) {
     .map(([k, v]) => ({ month: monthLabel(k), revenue: v }));
 }
 
+/**
+ * Stage order is derived from the data itself rather than a fixed list, so
+ * the chart works for any pipeline. Deals carry stagePosition when the loader
+ * can resolve it from the GHL pipeline definition; otherwise we fall back to
+ * first-seen order and push funded stages to the end.
+ */
 export function pipelineByStage(d: Dataset) {
-  const order = [
-    "New Lead",
-    "Contacted",
-    "Application Sent",
-    "Underwriting",
-    "Offer Presented",
-    "Funded",
-  ];
-  const map = new Map<string, { count: number; value: number }>();
-  for (const deal of d.deals) {
-    const cur = map.get(deal.stage) ?? { count: 0, value: 0 };
+  const map = new Map
+    string,
+    { count: number; value: number; position: number }
+  >();
+
+  d.deals.forEach((deal, i) => {
+    const stage = deal.stage ?? "Unassigned";
+    const cur = map.get(stage) ?? {
+      count: 0,
+      value: 0,
+      position: (deal as { stagePosition?: number }).stagePosition ?? i,
+    };
     cur.count += 1;
     cur.value += deal.amount;
-    map.set(deal.stage, cur);
-  }
-  return order.map((stage) => ({
-    stage,
-    count: map.get(stage)?.count ?? 0,
-    value: map.get(stage)?.value ?? 0,
-  }));
+    map.set(stage, cur);
+  });
+
+  return [...map.entries()]
+    .map(([stage, v]) => ({ stage, count: v.count, value: v.value, position: v.position }))
+    .sort((a, b) => {
+      const af = isFundedStage(a.stage) ? 1 : 0;
+      const bf = isFundedStage(b.stage) ? 1 : 0;
+      if (af !== bf) return af - bf;
+      return a.position - b.position;
+    })
+    .map(({ stage, count, value }) => ({ stage, count, value }));
 }
 
 export function conversionFunnel(d: Dataset) {
@@ -209,9 +225,25 @@ export function conversionFunnel(d: Dataset) {
   return totals;
 }
 
+/**
+ * When a pipeline filter is active, only count contacts that actually have a
+ * deal in that pipeline — otherwise the chart shows every lead in the account
+ * regardless of the selected filter.
+ */
 export function leadsOverTime(d: Dataset) {
+  let contacts = d.contacts;
+
+  if (d.pipelineFilter) {
+    const ids = new Set(
+      d.deals
+        .map((x) => (x as { contactId?: string }).contactId)
+        .filter(Boolean) as string[]
+    );
+    if (ids.size) contacts = d.contacts.filter((c) => ids.has(c.id));
+  }
+
   const map = new Map<string, number>();
-  for (const c of d.contacts) {
+  for (const c of contacts) {
     const week = weekKey(c.createdAt);
     map.set(week, (map.get(week) ?? 0) + 1);
   }
@@ -230,7 +262,7 @@ function weekKey(iso: string): string {
 }
 
 export function dealSizeDistribution(d: Dataset) {
-  const funded = d.deals.filter((x) => x.stage === FUNDED_STAGE);
+  const funded = d.deals.filter((x) => isFundedStage(x.stage));
   return TIER_1_BANDS.map((band) => {
     const inBand = funded.filter(
       (x) => x.amount >= band.min && x.amount < band.max
@@ -247,7 +279,7 @@ export function dealSizeDistribution(d: Dataset) {
 export function staleDeals(d: Dataset, thresholdDays = 21) {
   const now = Date.now();
   return d.deals
-    .filter((x) => x.stage !== FUNDED_STAGE)
+    .filter((x) => !isFundedStage(x.stage))
     .map((x) => ({
       ...x,
       idleDays: Math.floor((now - new Date(x.updatedAt).getTime()) / 86_400_000),
@@ -321,7 +353,7 @@ export function commissionTable(d: Dataset) {
   );
 
   const rows: DealRow[] = d.deals
-    .filter((x) => x.stage === FUNDED_STAGE)
+    .filter((x) => isFundedStage(x.stage))
     .map((x) => {
       const aff = directory.get(x.affiliateId);
       return {
@@ -345,23 +377,10 @@ type Person = {
   uplineId: string | null;
 };
 
-/**
- * Builds the AM → SAM tree from the affiliate registry.
- *
- * Each partner holds two tracking IDs (Funding Campaign and Partner Program),
- * which arrive from the sheet as two separate registry entries. We merge them
- * back into one person here, summing their deals and earnings across both
- * campaigns, so the hierarchy shows one card per human rather than two.
- *
- * A person is treated as a root AM when they have no upline, or when their
- * upline ID doesn't belong to any partner in the registry — otherwise they'd
- * vanish from the tree entirely.
- */
 export function affiliateTree(d: Dataset) {
   const totals = commissionTable(d);
   const byId = new Map(totals.map((t) => [t.affiliateId, t]));
 
-  // Group registry entries into people, keyed on name.
   const people = new Map<string, Person>();
   for (const a of d.affiliates) {
     const key = a.name;
@@ -378,7 +397,6 @@ export function affiliateTree(d: Dataset) {
     }
   }
 
-  // Which person owns a given tracking ID — used to resolve uplines.
   const ownerOfId = new Map<string, string>();
   for (const [key, p] of people) {
     for (const id of p.ids) ownerOfId.set(id, key);
