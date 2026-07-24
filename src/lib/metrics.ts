@@ -433,3 +433,107 @@ export function affiliateTree(d: Dataset) {
     return { am: merge(root), sams: children.map(merge) };
   });
 }
+
+export type MonthBucket = { key: string; label: string; full: string };
+
+export function trailingMonths(n = 6): MonthBucket[] {
+  const now = new Date();
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (n - 1 - i), 1);
+    return {
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleString("en-US", { month: "short" }),
+      full: d.toLocaleString("en-US", { month: "short", year: "numeric" }),
+    };
+  });
+}
+
+function monthKeyOf(input: string | Date | null | undefined): string | null {
+  if (!input) return null;
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export type FundedVolumeRow = {
+  key: string;
+  label: string;
+  full: string;
+  funded: number;
+  deals: number;
+};
+
+export function fundedVolumeByMonth(d: Dataset, n = 6): FundedVolumeRow[] {
+  const buckets = new Map<string, { funded: number; deals: number }>();
+
+  for (const deal of d.deals) {
+    if (!isFundedStage(deal.stage)) continue;
+    const k = monthKeyOf(deal.updatedAt);
+    if (!k) continue;
+    const b = buckets.get(k) ?? { funded: 0, deals: 0 };
+    b.funded += deal.amount || 0;
+    b.deals += 1;
+    buckets.set(k, b);
+  }
+
+  return trailingMonths(n).map((m) => ({
+    ...m,
+    funded: buckets.get(m.key)?.funded ?? 0,
+    deals: buckets.get(m.key)?.deals ?? 0,
+  }));
+}
+
+export type ApprovalRow = {
+  key: string;
+  label: string;
+  full: string;
+  submitted: number;
+  approved: number;
+  declined: number;
+  rate: number | null;
+};
+
+/**
+ * Stage names are matched loosely because they vary per pipeline. A deal that
+ * reached any post-submission stage counts toward volume, so the approval rate
+ * denominator reflects everything that actually got underwritten.
+ */
+export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
+  const buckets = new Map
+    string,
+    { submitted: number; approved: number; declined: number }
+  >();
+
+  const bump = (
+    k: string | null,
+    field: "submitted" | "approved" | "declined"
+  ) => {
+    if (!k) return;
+    const b = buckets.get(k) ?? { submitted: 0, approved: 0, declined: 0 };
+    b[field] += 1;
+    buckets.set(k, b);
+  };
+
+  for (const deal of d.deals) {
+    const stage = (deal.stage || "").toLowerCase();
+    const k = monthKeyOf(deal.updatedAt);
+
+    if (/submitted|underwriting|approved|funded|declined|denied/.test(stage)) {
+      bump(k, "submitted");
+    }
+    if (/approved|funded/.test(stage)) bump(k, "approved");
+    if (/declined|denied|dead/.test(stage)) bump(k, "declined");
+  }
+
+  return trailingMonths(n).map((m) => {
+    const b = buckets.get(m.key);
+    const submitted = b?.submitted ?? 0;
+    return {
+      ...m,
+      submitted,
+      approved: b?.approved ?? 0,
+      declined: b?.declined ?? 0,
+      rate: submitted > 0 ? ((b?.approved ?? 0) / submitted) * 100 : null,
+    };
+  });
+}
