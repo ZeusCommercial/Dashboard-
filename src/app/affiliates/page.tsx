@@ -45,9 +45,7 @@ export default async function AffiliatesPage({
     <main className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-bright">Partner Network</h1>
-        <p className="mt-1 text-[13px] text-muted">
-          Commission rollup across all pipelines.
-        </p>
+       
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -100,7 +98,7 @@ export default async function AffiliatesPage({
 
         <Card
           title="Volume Share by Band"
-          subtitle="Where funded volume concentrates"
+          
         >
           <BarList
             rows={dist.map((d) => ({
@@ -168,7 +166,7 @@ export default async function AffiliatesPage({
         )}
       </Card>
 
-      <Card title="Hierarchy" subtitle="AM → SAM rollup">
+      <Card title="Hierarchy">
         {tree.length === 0 ? (
           <div className="py-10 text-center text-[13px] text-muted/70">
             No affiliates in the registry yet. Add partners to the affiliate
