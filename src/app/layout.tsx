@@ -33,7 +33,7 @@ export default function RootLayout({
                 width={250}
                 height={250}
                 priority
-                className="h-9 w-auto"
+                className="h-14 w-auto -my-2""
               />
               <span className="whitespace-nowrap font-display text-[19px] leading-none text-bright">
                 Zeus Commercial Capital
