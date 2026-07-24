@@ -8,11 +8,11 @@ import {
 import { PipelineFilter } from "@/components/PipelineFilter";
 import {
   compactMoney,
-  conversionFunnel,
+  dealSizeDistribution,
   leadsOverTime,
   loadDataset,
+  money,
   overviewKpis,
-  pct,
   pipelineByStage,
   revenueByMonth,
 } from "@/lib/metrics";
@@ -28,10 +28,11 @@ export default async function OverviewPage({
   const kpis = overviewKpis(data);
   const revenue = revenueByMonth(data);
   const stages = pipelineByStage(data);
-  const funnel = conversionFunnel(data);
+  const bands = dealSizeDistribution(data);
   const leads = leadsOverTime(data);
 
   const totalPipeline = stages.reduce((s, x) => s + x.value, 0);
+  const bandedDeals = bands.reduce((s, b) => s + b.count, 0);
 
   return (
     <main className="space-y-6">
@@ -94,39 +95,18 @@ export default async function OverviewPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
-          title="Conversion Funnel"
-          subtitle="Cumulative reach and drop-off per stage"
+          title="Deal Size Distribution"
+          subtitle={`${bandedDeals} funded deals by Tier 1 commission band`}
           className="lg:col-span-2"
         >
-          <div className="space-y-3">
-            {funnel.map((f, i) => {
-              const first = funnel[0]?.count ?? 1;
-              const width = (f.count / first) * 100;
-              return (
-                <div key={f.stage} className="group">
-                  <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                    <span className="text-[13px] text-bright/90">
-                      {i + 1}. {f.stage}
-                    </span>
-                    <span className="tnum text-[13px] font-semibold text-bright">
-                      {f.count}
-                      {f.dropoff !== null && f.dropoff > 0 && (
-                        <span className="ml-2 text-[11px] font-normal text-loss">
-                          −{pct(f.dropoff)}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-ink">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-goldDim to-gold"
-                      style={{ width: `${Math.max(width, 2)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <BarList
+            rows={bands.map((b) => ({
+              label: `${b.label} — ${money(b.payout)} payout`,
+              value: b.count,
+              display: `${b.count}`,
+              sub: compactMoney(b.volume),
+            }))}
+          />
         </Card>
 
         <Card title="Leads Over Time" subtitle="New contacts per week">
