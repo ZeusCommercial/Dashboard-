@@ -53,7 +53,7 @@ export default function RootLayout({
           </header>
           {children}
           <footer className="mt-10 border-t border-ink/15 pt-5 text-[11px] text-ink/45">
-            Zeus Commercial Capital — internal dashboard. Figures update on refresh.
+            Zeus Commercial Capital
           </footer>
         </div>
       </body>
