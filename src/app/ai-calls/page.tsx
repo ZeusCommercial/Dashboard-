@@ -64,10 +64,10 @@ export default async function AiCallsPage({
         <KpiCard
           label="Connect Rate"
           value={pct(m.connectRate)}
-          hint="Answered or booked"
+          hint="Answered"
         />
         <KpiCard
-          label="Median Speed to Lead"
+          label="Speed to Lead"
           value={`${Math.round(m.medianSpeedMin)}m`}
           hint={`${pct(m.under5Rate)} under 5 minutes`}
         />
@@ -76,7 +76,7 @@ export default async function AiCallsPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
           title="Call Volume by Week"
-          subtitle="Total calls with booked overlay"
+          
           className="lg:col-span-2"
         >
           <ColumnChart
