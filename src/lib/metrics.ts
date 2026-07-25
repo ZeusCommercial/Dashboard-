@@ -499,7 +499,7 @@ export type ApprovalRow = {
  * denominator reflects everything that actually got underwritten.
  */
 export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
-  const buckets = new Map
+  const buckets = new Map<
     string,
     { submitted: number; approved: number; declined: number }
   >();
