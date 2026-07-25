@@ -171,7 +171,7 @@ export default async function OverviewPage({
           )}
         </Card>
 
-        <Card title="Leads Over Time" subtitle="New contacts per week">
+        <Card title="Leads Over Time">
           <ColumnChart
             rows={leads.map((l) => ({
               label: l.week,
