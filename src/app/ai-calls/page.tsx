@@ -88,7 +88,7 @@ export default async function AiCallsPage({
           />
         </Card>
 
-        <Card title="Call Outcomes" subtitle="Distribution across all calls">
+        <Card title="Call Outcomes">
           <BarList
             rows={outcomes.map((o) => ({
               label: o.outcome,
