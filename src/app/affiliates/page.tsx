@@ -45,7 +45,6 @@ export default async function AffiliatesPage({
     <main className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-bright">
-          Partner Commissions
         </h1>
       </div>
 
