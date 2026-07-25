@@ -25,7 +25,7 @@ export default async function DealsPage({
   return (
     <main className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl text-bright">Deals</h1>
+        <h1 className="font-display text-2xl text-bright"></h1>
         
       </div>
 
