@@ -63,6 +63,7 @@ export default async function AffiliatesPage({
         <KpiCard
           label="Paid Partners"
           value={`${paidPartnerCount(data)}`}
+          hint="Number of Professional Partners"
         />
         <KpiCard
           label="Volume Attributed"
