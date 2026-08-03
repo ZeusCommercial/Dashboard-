@@ -60,9 +60,9 @@ export default async function AffiliatesPage({
           hint="Band-based earnings, Tier 1 only"
         />
         <KpiCard
-          label="Override Earnings"
-          value={money(totalOverrides)}
-          hint="$100 per downline funded deal"
+          label="Paid Partners"
+          value={`${paidPartnerCount(data)}`}
+          hint="Active paid partner accounts"
         />
         <KpiCard
           label="Volume Attributed"
