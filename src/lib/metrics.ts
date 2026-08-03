@@ -524,20 +524,7 @@ export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
     if (/approved|funded/.test(stage)) bump(k, "approved");
     if (/declined|denied|dead/.test(stage)) bump(k, "declined");
   }
-export const PAID_PARTNER_TAG = "paid partner";
-
-/**
- * Counts contacts carrying the "paid partner" tag. Matched case-insensitively
- * so "Paid Partner" and "paid partner" both count. Works identically on mock
- * and live data since both carry contacts with an optional tags array.
- */
-export function paidPartnerCount(d: Dataset): number {
-  return d.contacts.filter((c) =>
-    ((c as { tags?: string[] }).tags ?? [])
-      .map((t) => t.toLowerCase())
-      .includes(PAID_PARTNER_TAG)
-  ).length;
-}
+  
   return trailingMonths(n).map((m) => {
     const b = buckets.get(m.key);
     const submitted = b?.submitted ?? 0;
@@ -549,4 +536,13 @@ export function paidPartnerCount(d: Dataset): number {
       rate: submitted > 0 ? ((b?.approved ?? 0) / submitted) * 100 : null,
     };
   });
+}
+export const PAID_PARTNER_TAG = "paid partner";
+
+export function paidPartnerCount(d: Dataset): number {
+  return d.contacts.filter((c) =>
+    ((c as { tags?: string[] }).tags ?? [])
+      .map((t) => t.toLowerCase())
+      .includes(PAID_PARTNER_TAG)
+  ).length;
 }
