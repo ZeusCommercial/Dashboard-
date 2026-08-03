@@ -208,6 +208,17 @@ export async function loadLiveDataset(opts: {
       getVoiceAiCalls({ pageSize: 50, maxPages: 50 }),
     ]);
 
+  // One-time visibility into what GHL actually returns on a contact. Read this
+  // in Render logs to confirm the `tags` array is present and populated. Remove
+  // once verified.
+  if (contacts.length) {
+    console.log("SAMPLE CONTACT:", JSON.stringify(contacts[0]));
+    const taggedCount = contacts.filter((c) =>
+      (c.tags ?? []).map((t) => t.toLowerCase()).includes("paid partner")
+    ).length;
+    console.log(`CONTACTS: ${contacts.length} total, ${taggedCount} tagged "paid partner"`);
+  }
+
   // Build stage-id -> name and stage-id -> position maps across every pipeline.
   // Opportunities reference stage by ID, not name, so we resolve here. Position
   // drives chart ordering so "Pipeline by Stage" follows the real GHL order for
@@ -270,7 +281,10 @@ export async function loadLiveDataset(opts: {
   }
 
   // Contacts feed leads-over-time and speed-to-lead metrics.
-  // Skip partner contacts — they're affiliates, not leads.
+  // Skip partner contacts — they're affiliates, not leads — but preserve the
+  // full tag list so downstream counts (e.g. paid partners) can still see them.
+  // The "paid partner" tag is kept even on filtered-in leads so the count works
+  // regardless of which contacts carry it.
   const leadContacts: MockContact[] = contacts
     .filter(
       (c) => !(c.tags ?? []).map((t) => t.toLowerCase()).includes(PARTNER_TAG)
@@ -279,7 +293,27 @@ export async function loadLiveDataset(opts: {
       id: c.id,
       createdAt: c.dateAdded ?? new Date().toISOString(),
       firstCallAt: firstCallByContact.get(c.id) ?? null,
+      tags: c.tags ?? [],
     }));
+
+  // Paid-partner count must see ALL contacts, including any excluded by the
+  // partner filter above — so we compute it here and inject a synthetic
+  // contact carrying the tag for each one, ensuring paidPartnerCount() resolves
+  // correctly no matter how the leads were filtered.
+  const paidPartnerContacts: MockContact[] = contacts
+    .filter(
+      (c) =>
+        (c.tags ?? []).map((t) => t.toLowerCase()).includes("paid partner") &&
+        (c.tags ?? []).map((t) => t.toLowerCase()).includes(PARTNER_TAG)
+    )
+    .map((c) => ({
+      id: `paidpartner_${c.id}`,
+      createdAt: c.dateAdded ?? new Date().toISOString(),
+      firstCallAt: null,
+      tags: c.tags ?? [],
+    }));
+
+  const contactsForMetrics = [...leadContacts, ...paidPartnerContacts];
 
   // Include unattributed as a synthetic affiliate so those deals still appear
   // in totals rather than silently disappearing.
@@ -290,7 +324,7 @@ export async function loadLiveDataset(opts: {
 
   return {
     deals,
-    contacts: leadContacts,
+    contacts: contactsForMetrics,
     calls,
     affiliates: affiliatesWithUnattributed,
     isMock: false,
