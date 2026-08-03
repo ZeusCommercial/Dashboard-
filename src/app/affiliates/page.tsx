@@ -14,6 +14,7 @@ import {
   dealSizeDistribution,
   loadDataset,
   money,
+  paidPartnerCount,
   pct,
 } from "@/lib/metrics";
 
