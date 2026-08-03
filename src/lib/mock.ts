@@ -204,13 +204,3 @@ export function usingMockData(): boolean {
   return !process.env.GHL_PRIVATE_TOKEN || !process.env.GHL_LOCATION_ID;
 }
 
-const fake = {
-  contacts: [
-    { id: "a", tags: ["paid partner"] },
-    { id: "b", tags: [] },
-    { id: "c", tags: ["Paid Partner"] }, // case check
-  ],
-} as any;
-
-expect(paidPartnerCount(fake)).toBe(2);
-
