@@ -77,6 +77,9 @@ export type MockDeal = {
   /** Real GHL stage order, so charts sort correctly per pipeline. */
   stagePosition?: number;
   pipelineId?: string | null;
+  brokerName?: string | null;
+  brokerPoints?: number | null;
+  commissionOwed?: number | null;
 };
 
 function daysAgo(n: number): string {
