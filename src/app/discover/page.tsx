@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, Table, Td } from "@/components/ui";
 import { getPipelines, getCustomFieldDefs, GhlError } from "@/lib/ghl";
 
@@ -97,10 +98,34 @@ export default async function DiscoverPage({
   });
 
   // Optional: fetch one SPECIFIC opportunity by ID (?oppId=xxx in the URL).
+  // Opportunity custom fields don't reliably show up in the location-wide
+  // /customFields endpoint (a known GHL API gap), so the only reliable place
+  // to see their real IDs is on an opportunity that actually has them set —
+  // e.g. the test deal used to verify the broker commission workflow.
   const targetOppId = searchParams.oppId;
   const targetOpportunity = targetOppId
     ? await ghlFetch("GET", `/opportunities/${targetOppId}`, {})
     : null;
+
+  // A clickable list of recent opportunities with their real IDs, so there's
+  // no need to go hunting through the GHL UI for an ID to paste in above.
+  const recentOpportunitiesRaw = await ghlFetch("GET", "/opportunities/search", {
+    query: {
+      location_id: LOCATION_ID!,
+      limit: "25",
+    },
+  });
+
+  type OppListItem = { id: string; name?: string; monetaryValue?: number };
+  let recentOpportunities: OppListItem[] = [];
+  try {
+    const parsed = JSON.parse(recentOpportunitiesRaw.body) as {
+      opportunities?: OppListItem[];
+    };
+    recentOpportunities = parsed.opportunities ?? [];
+  } catch {
+    recentOpportunities = [];
+  }
 
   return (
     <main className="space-y-6">
@@ -123,12 +148,49 @@ export default async function DiscoverPage({
           </code>
           . The full JSON below will include a <code>customFields</code>{" "}
           array — each entry has the field&apos;s <code>id</code> next to its
-          value.
+          value, so you can match Commission Owed, Broker Points, and Broker
+          Name to their real IDs.
         </p>
         {targetOpportunity && (
           <pre className="mt-4 max-h-[500px] overflow-auto whitespace-pre-wrap break-all rounded bg-ink p-3 text-[10px] leading-tight text-muted/90">
             {targetOpportunity.body}
           </pre>
+        )}
+      </Card>
+
+      <Card
+        title="Recent Opportunities — click one to look it up"
+        subtitle={`${recentOpportunities.length} shown — click a deal to load its full JSON above, no manual ID copying needed`}
+      >
+        {recentOpportunities.length === 0 ? (
+          <div className="py-6 text-center text-[13px] text-muted">
+            No opportunities returned. Status: {recentOpportunitiesRaw.status}
+          </div>
+        ) : (
+          <Table head={["Deal", "Amount", "ID"]}>
+            {recentOpportunities.map((o) => (
+              <tr key={o.id} className="border-b border-hairline/60">
+                <Td align="left">
+                  <Link
+                    href={`/discover?oppId=${o.id}`}
+                    className="font-medium text-bright underline decoration-gold/40 underline-offset-2 hover:text-gold"
+                  >
+                    {o.name ?? "Untitled Deal"}
+                  </Link>
+                </Td>
+                <Td align="left">
+                  <span className="text-muted">
+                    {o.monetaryValue
+                      ? `$${Number(o.monetaryValue).toLocaleString()}`
+                      : "—"}
+                  </span>
+                </Td>
+                <Td align="left">
+                  <code className="text-[11px] text-muted/80">{o.id}</code>
+                </Td>
+              </tr>
+            ))}
+          </Table>
         )}
       </Card>
 
