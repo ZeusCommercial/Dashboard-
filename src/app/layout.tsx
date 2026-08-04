@@ -14,6 +14,7 @@ const NAV = [
   { href: "/ai-calls", label: "AI Calls" },
   { href: "/affiliates", label: "Affiliates" },
   { href: "/deals", label: "Deals" },
+  { href: "/partner-brokers", label: "Partner Brokers" },
 ];
 
 export default function RootLayout({
