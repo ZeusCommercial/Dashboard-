@@ -50,9 +50,9 @@ export default async function PartnerBrokersPage({
           hint={`${deals.length} deal${deals.length === 1 ? "" : "s"} tagged`}
         />
         <KpiCard
-          label="Avg Broker Points"
-          value={kpis.avgPoints ? kpis.avgPoints.toFixed(2) : "—"}
-          hint="Across brokers with points set"
+          label="Avg Broker Percentage"
+          value={kpis.avgPoints ? `${kpis.avgPoints.toFixed(2)}%` : "—"}
+          hint="Across brokers with a percentage set"
         />
       </div>
 
@@ -97,34 +97,6 @@ export default async function PartnerBrokersPage({
         </Card>
       </div>
 
-      <Card title="Top Producers" subtitle="Sorted by funded volume">
-        {rows.filter((r) => r.fundedDeals > 0).length === 0 ? (
-          <Empty>No funded deals attributed to a partner broker yet.</Empty>
-        ) : (
-          <Table
-            head={["Broker", "Funded Deals", "Funded Volume", "Avg Points", "Owed"]}
-          >
-            {rows
-              .filter((r) => r.fundedDeals > 0)
-              .map((row) => (
-                <tr key={row.name} className="border-b border-cardline/60">
-                  <Td align="left">
-                    <span className="font-medium text-bright">{row.name}</span>
-                  </Td>
-                  <Td>{row.fundedDeals}</Td>
-                  <Td>{compactMoney(row.fundedVolume)}</Td>
-                  <Td>{row.avgPoints ? row.avgPoints.toFixed(2) : "—"}</Td>
-                  <Td>
-                    <span className="font-semibold text-bright">
-                      {money(row.totalOwed)}
-                    </span>
-                  </Td>
-                </tr>
-              ))}
-          </Table>
-        )}
-      </Card>
-
       <Card title="All Broker Deals" subtitle={`${deals.length} in this pipeline`}>
         {deals.length === 0 ? (
           <Empty>
@@ -132,9 +104,7 @@ export default async function PartnerBrokersPage({
             Opportunity to see it here.
           </Empty>
         ) : (
-          <Table
-            head={["Deal", "Broker", "Points", "Loan Amount", "Owed", "Stage"]}
-          >
+          <Table head={["Deal", "Percentage", "Loan Amount", "Owed"]}>
             {[...deals]
               .sort((a, b) => (b.commissionOwed || 0) - (a.commissionOwed || 0))
               .slice(0, 50)
@@ -142,10 +112,15 @@ export default async function PartnerBrokersPage({
                 <tr key={deal.id} className="border-b border-hairline/60">
                   <Td align="left">
                     <div className="font-medium text-bright">{deal.name}</div>
-                    <div className="text-[11px] text-muted/60">{deal.id}</div>
+                    <div className="text-[11px] text-muted/60">
+                      {deal.brokerName}
+                    </div>
                   </Td>
-                  <Td align="left">{deal.brokerName}</Td>
-                  <Td>{deal.brokerPoints ?? "—"}</Td>
+                  <Td>
+                    {deal.brokerPoints !== null && deal.brokerPoints !== undefined
+                      ? `${deal.brokerPoints}%`
+                      : "—"}
+                  </Td>
                   <Td>{compactMoney(deal.amount)}</Td>
                   <Td>
                     {deal.commissionOwed ? (
@@ -153,11 +128,6 @@ export default async function PartnerBrokersPage({
                     ) : (
                       <span className="text-muted/50">—</span>
                     )}
-                  </Td>
-                  <Td>
-                    <span className="rounded bg-raised px-2 py-0.5 text-[11px] text-muted">
-                      {deal.stage}
-                    </span>
                   </Td>
                 </tr>
               ))}
