@@ -104,7 +104,7 @@ export default async function PartnerBrokersPage({
             Opportunity to see it here.
           </Empty>
         ) : (
-          <Table head={["Deal", "Percentage", "Loan Amount", "Owed"]}>
+          <Table head={["Deal", "Broker", "Percentage", "Loan Amount", "Owed"]}>
             {[...deals]
               .sort((a, b) => (b.commissionOwed || 0) - (a.commissionOwed || 0))
               .slice(0, 50)
@@ -112,10 +112,8 @@ export default async function PartnerBrokersPage({
                 <tr key={deal.id} className="border-b border-hairline/60">
                   <Td align="left">
                     <div className="font-medium text-bright">{deal.name}</div>
-                    <div className="text-[11px] text-muted/60">
-                      {deal.brokerName}
-                    </div>
                   </Td>
+                  <Td align="left">{deal.brokerName}</Td>
                   <Td>
                     {deal.brokerPoints !== null && deal.brokerPoints !== undefined
                       ? `${deal.brokerPoints}%`
