@@ -28,7 +28,7 @@ export default async function PartnerBrokersPage({
       <div>
         <h1 className="font-display text-2xl text-bright">Partner Brokers</h1>
         <p className="mt-1 text-[13px] text-muted">
-          Manual, points-based brokers tracked per deal — Broker Name, Broker
+          Manual, points-based brokers tracked per deal. Broker Name, Broker
           Points, and Commission Owed set directly on the Opportunity.
         </p>
       </div>
