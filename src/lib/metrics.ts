@@ -560,7 +560,7 @@ export type BrokerRow = {
 };
 
 export function brokerTable(d: Dataset): BrokerRow[] {
-  const map = new Map
+  const map = new Map<
     string,
     {
       deals: number;
