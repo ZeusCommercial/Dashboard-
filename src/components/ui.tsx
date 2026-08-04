@@ -364,6 +364,93 @@ export function GroupedBarChart({
     </div>
   );
 }
+export function DualBarChart({
+  rows,
+  height = 190,
+  seriesALabel = "Series A",
+  seriesBLabel = "Series B",
+}: {
+  rows: { label: string; a: number; b: number; aDisplay: string; bDisplay: string }[];
+  height?: number;
+  seriesALabel?: string;
+  seriesBLabel?: string;
+}) {
+  const maxA = Math.max(...rows.map((r) => r.a), 1);
+  const maxB = Math.max(...rows.map((r) => r.b), 1);
+
+  if (!rows.length) {
+    return (
+      <div
+        className="flex items-center justify-center text-[13px] text-muted"
+        style={{ height }}
+      >
+        No data for this selection
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-muted">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-gold" />
+          {seriesALabel}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-[#8DA2C0]" />
+          {seriesBLabel}
+        </span>
+      </div>
+
+      <div className="flex items-end gap-4" style={{ height }}>
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+          >
+            <div className="flex h-full w-full items-end justify-center gap-1.5">
+              <div className="flex h-full w-1/2 flex-col items-center justify-end">
+                <span className="tnum mb-1 text-[10px] font-semibold text-bright opacity-0 transition-opacity group-hover:opacity-100">
+                  {r.aDisplay}
+                </span>
+                <div
+                  className="w-full max-w-[28px] rounded-t bg-gold transition-opacity group-hover:opacity-80"
+                  style={{
+                    height: `${Math.max((r.a / maxA) * 100, 2)}%`,
+                    minHeight: 3,
+                  }}
+                />
+              </div>
+              <div className="flex h-full w-1/2 flex-col items-center justify-end">
+                <span className="tnum mb-1 text-[10px] font-semibold text-bright opacity-0 transition-opacity group-hover:opacity-100">
+                  {r.bDisplay}
+                </span>
+                <div
+                  className="w-full max-w-[28px] rounded-t bg-[#8DA2C0] transition-opacity group-hover:opacity-80"
+                  style={{
+                    height: `${Math.max((r.b / maxB) * 100, 2)}%`,
+                    minHeight: 3,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2.5 flex gap-4 border-t border-cardline pt-2.5">
+        {rows.map((r) => (
+          <div
+            key={`${r.label}-label`}
+            className="min-w-0 flex-1 text-center text-[10px] uppercase tracking-wide text-muted"
+          >
+            {r.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function Table({
   head,
