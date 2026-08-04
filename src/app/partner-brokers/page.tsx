@@ -113,7 +113,7 @@ export default async function PartnerBrokersPage({
                   <Td align="left">
                     <div className="font-medium text-bright">{deal.name}</div>
                   </Td>
-                  <Td align="left">{deal.brokerName}</Td>
+                  <Td>{deal.brokerName}</Td>
                   <Td>
                     {deal.brokerPoints !== null && deal.brokerPoints !== undefined
                       ? `${deal.brokerPoints}%`
