@@ -27,6 +27,7 @@ import {
 } from "./ghl";
 import type { Tier } from "./commission";
 import type { MockCall, MockContact, MockDeal, MockAffiliate } from "./mock";
+import { FIELD_IDS } from "@/config/ghl-mapping";
 
 /** Contacts carrying this tag are partners, not leads. */
 const PARTNER_TAG = "partner-approved";
@@ -232,14 +233,16 @@ export async function loadLiveDataset(opts: {
     const contact = o.contactId ? contactById.get(o.contactId) : undefined;
     const affiliateId = contact ? readRecruitedBy(contact) : null;
 
+    const brokerNameRaw = readCustomField(o, FIELD_IDS.brokerName);
+    const brokerPointsRaw = readCustomField(o, FIELD_IDS.brokerPoints);
+    const commissionOwedRaw = readCustomField(o, FIELD_IDS.commissionOwed);
+
     return {
       id: o.id,
       name: o.name ?? "Untitled Deal",
       amount: Number(o.monetaryValue ?? 0),
       stage: isFundedStageName(stageName) ? "Funded" : stageName,
       affiliateId: affiliateId ?? "unattributed",
-      // Carried through so leadsOverTime() can narrow contacts to the
-      // selected pipeline, and so stage charts sort in real pipeline order.
       contactId: o.contactId ?? null,
       stagePosition: stageIdToPosition.get(o.pipelineStageId ?? "") ?? 999,
       pipelineId: o.pipelineId ?? null,
@@ -247,6 +250,9 @@ export async function loadLiveDataset(opts: {
       updatedAt:
         o.updatedAt ?? o.lastStatusChangeAt ?? o.createdAt ?? new Date().toISOString(),
       netBrokerFee: null, // GHL doesn't record this yet — Tier 2 stays pending
+      brokerName: brokerNameRaw || null,
+      brokerPoints: brokerPointsRaw !== null ? Number(brokerPointsRaw) : null,
+      commissionOwed: commissionOwedRaw !== null ? Number(commissionOwedRaw) : null,
     };
   });
 
