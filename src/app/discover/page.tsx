@@ -36,7 +36,11 @@ async function ghlFetch(
   }
 }
 
-export default async function DiscoverPage() {
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: { oppId?: string };
+}) {
   const hasCredentials = !!TOKEN && !!LOCATION_ID;
 
   if (!hasCredentials) {
@@ -92,6 +96,12 @@ export default async function DiscoverPage() {
     },
   });
 
+  // Optional: fetch one SPECIFIC opportunity by ID (?oppId=xxx in the URL).
+  const targetOppId = searchParams.oppId;
+  const targetOpportunity = targetOppId
+    ? await ghlFetch("GET", `/opportunities/${targetOppId}`, {})
+    : null;
+
   return (
     <main className="space-y-6">
       <div>
@@ -100,6 +110,27 @@ export default async function DiscoverPage() {
           Deep probes to find where attribution and affiliate data live.
         </p>
       </div>
+
+      <Card
+        title="Look up one specific opportunity"
+        subtitle="Opportunity custom field IDs don't reliably show up in the Custom Fields table below (a known GHL API gap) — this pulls them straight off a real deal instead."
+      >
+        <p className="text-[13px] text-muted">
+          Open the test opportunity you used for the broker commission
+          workflow, copy its ID from the GHL URL, then reload this page as{" "}
+          <code className="rounded bg-ink px-1.5 py-0.5 text-[12px] text-gold">
+            /discover?oppId=YOUR_OPPORTUNITY_ID
+          </code>
+          . The full JSON below will include a <code>customFields</code>{" "}
+          array — each entry has the field&apos;s <code>id</code> next to its
+          value.
+        </p>
+        {targetOpportunity && (
+          <pre className="mt-4 max-h-[500px] overflow-auto whitespace-pre-wrap break-all rounded bg-ink p-3 text-[10px] leading-tight text-muted/90">
+            {targetOpportunity.body}
+          </pre>
+        )}
+      </Card>
 
       <Card
         title="Contact Sample (3 real contacts, full JSON)"
