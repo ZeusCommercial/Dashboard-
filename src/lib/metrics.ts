@@ -629,6 +629,27 @@ export function brokerKpis(d: Dataset): BrokerKpis {
   return { totalOwed, activeBrokers: rows.length, brokerVolume, avgPoints };
 }
 
+export type BrokerMonthlyRow = MonthBucket & { owed: number; deals: number };
+
+export function brokerCommissionByMonth(d: Dataset, n = 6): BrokerMonthlyRow[] {
+  const buckets = new Map<string, { owed: number; deals: number }>();
+
+  for (const deal of brokerDeals(d)) {
+    const k = monthKeyOf(deal.updatedAt);
+    if (!k) continue;
+    const b = buckets.get(k) ?? { owed: 0, deals: 0 };
+    b.owed += deal.commissionOwed || 0;
+    b.deals += 1;
+    buckets.set(k, b);
+  }
+
+  return trailingMonths(n).map((m) => ({
+    ...m,
+    owed: buckets.get(m.key)?.owed ?? 0,
+    deals: buckets.get(m.key)?.deals ?? 0,
+  }));
+}
+
 export const PAID_PARTNER_TAG = "paid partner";
 
 export function paidPartnerCount(d: Dataset): number {
