@@ -24,7 +24,6 @@ export default async function PartnerBrokersPage({
   const totalVolume = rows.reduce((s, r) => s + r.volume, 0);
 
   return (
-    return (
     <main className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-bright"></h1>
