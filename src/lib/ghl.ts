@@ -121,6 +121,12 @@ export type GhlCustomFieldValue = {
   id: string;
   value?: string | number | null;
   fieldValue?: string | number | null;
+  // The bulk /opportunities/search endpoint returns typed field envelopes
+  // instead of a plain `value`/`fieldValue` — different shape per data type.
+  fieldValueString?: string | null;
+  fieldValueNumber?: number | null;
+  fieldValueArray?: unknown[] | null;
+  fieldValueDate?: string | null;
 };
 
 export type GhlOpportunity = {
@@ -288,7 +294,17 @@ export function readCustomField(
   if (!fieldId || !record.customFields) return null;
   const hit = record.customFields.find((f) => f.id === fieldId);
   if (!hit) return null;
-  const raw = hit.value ?? hit.fieldValue;
+  // Different GHL endpoints shape this differently: the single-opportunity
+  // fetch uses a plain `fieldValue`, while the bulk /opportunities/search
+  // endpoint wraps it in a type-specific key (fieldValueString,
+  // fieldValueNumber, etc). Array values (e.g. multi-select) are joined.
+  const raw =
+    hit.value ??
+    hit.fieldValue ??
+    hit.fieldValueString ??
+    hit.fieldValueNumber ??
+    hit.fieldValueDate ??
+    (Array.isArray(hit.fieldValueArray) ? hit.fieldValueArray.join(", ") : null);
   return raw === null || raw === undefined ? null : String(raw);
 }
 
