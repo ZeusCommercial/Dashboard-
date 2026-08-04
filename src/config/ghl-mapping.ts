@@ -4,6 +4,9 @@ export const FIELD_IDS = {
   samId: process.env.GHL_FIELD_SAM_ID ?? "",
   campaign: process.env.GHL_FIELD_CAMPAIGN ?? "",
   netBrokerFee: process.env.GHL_FIELD_NET_BROKER_FEE ?? "",
+  brokerName: process.env.GHL_FIELD_BROKER_NAME ?? "",
+  brokerPoints: process.env.GHL_FIELD_BROKER_POINTS ?? "",
+  commissionOwed: process.env.GHL_FIELD_COMMISSION_OWED ?? "",
 } as const;
 
 export const TIER_2_CAMPAIGN_MARKERS = (
