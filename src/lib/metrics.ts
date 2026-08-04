@@ -537,6 +537,98 @@ export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
     };
   });
 }
+export type BrokerDeal = MockDeal & {
+  brokerName: string;
+  brokerPoints: number | null;
+  commissionOwed: number | null;
+};
+
+export function brokerDeals(d: Dataset): BrokerDeal[] {
+  return d.deals.filter(
+    (x): x is BrokerDeal => !!(x as { brokerName?: string | null }).brokerName
+  );
+}
+
+export type BrokerRow = {
+  name: string;
+  deals: number;
+  fundedDeals: number;
+  volume: number;
+  fundedVolume: number;
+  totalOwed: number;
+  avgPoints: number;
+};
+
+export function brokerTable(d: Dataset): BrokerRow[] {
+  const map = new Map
+    string,
+    {
+      deals: number;
+      fundedDeals: number;
+      volume: number;
+      fundedVolume: number;
+      owed: number;
+      pointsSum: number;
+      pointsCount: number;
+    }
+  >();
+
+  for (const deal of brokerDeals(d)) {
+    const cur = map.get(deal.brokerName) ?? {
+      deals: 0,
+      fundedDeals: 0,
+      volume: 0,
+      fundedVolume: 0,
+      owed: 0,
+      pointsSum: 0,
+      pointsCount: 0,
+    };
+    cur.deals += 1;
+    cur.volume += deal.amount || 0;
+    if (isFundedStage(deal.stage)) {
+      cur.fundedDeals += 1;
+      cur.fundedVolume += deal.amount || 0;
+    }
+    cur.owed += deal.commissionOwed || 0;
+    if (deal.brokerPoints !== null && deal.brokerPoints !== undefined) {
+      cur.pointsSum += deal.brokerPoints;
+      cur.pointsCount += 1;
+    }
+    map.set(deal.brokerName, cur);
+  }
+
+  return [...map.entries()]
+    .map(([name, v]) => ({
+      name,
+      deals: v.deals,
+      fundedDeals: v.fundedDeals,
+      volume: v.volume,
+      fundedVolume: v.fundedVolume,
+      totalOwed: v.owed,
+      avgPoints: v.pointsCount ? v.pointsSum / v.pointsCount : 0,
+    }))
+    .sort((a, b) => b.fundedVolume - a.fundedVolume || b.volume - a.volume);
+}
+
+export type BrokerKpis = {
+  totalOwed: number;
+  activeBrokers: number;
+  brokerVolume: number;
+  avgPoints: number;
+};
+
+export function brokerKpis(d: Dataset): BrokerKpis {
+  const rows = brokerTable(d);
+  const totalOwed = rows.reduce((s, r) => s + r.totalOwed, 0);
+  const brokerVolume = rows.reduce((s, r) => s + r.volume, 0);
+  const pointsRows = rows.filter((r) => r.avgPoints > 0);
+  const avgPoints = pointsRows.length
+    ? pointsRows.reduce((s, r) => s + r.avgPoints, 0) / pointsRows.length
+    : 0;
+
+  return { totalOwed, activeBrokers: rows.length, brokerVolume, avgPoints };
+}
+
 export const PAID_PARTNER_TAG = "paid partner";
 
 export function paidPartnerCount(d: Dataset): number {
