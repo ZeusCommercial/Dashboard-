@@ -24,13 +24,10 @@ export default async function PartnerBrokersPage({
   const totalVolume = rows.reduce((s, r) => s + r.volume, 0);
 
   return (
+    return (
     <main className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl text-bright">Partner Brokers</h1>
-        <p className="mt-1 text-[13px] text-muted">
-          Manual, points-based brokers tracked per deal. Broker Name, Broker
-          Points, and Commission Owed set directly on the Opportunity.
-        </p>
+        <h1 className="font-display text-2xl text-bright"></h1>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
