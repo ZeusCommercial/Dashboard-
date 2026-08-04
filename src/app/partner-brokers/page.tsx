@@ -1,5 +1,15 @@
-import { BarList, Card, Empty, KpiCard, Table, Td } from "@/components/ui";
 import {
+  BarList,
+  Card,
+  ColumnChart,
+  DualBarChart,
+  Empty,
+  KpiCard,
+  Table,
+  Td,
+} from "@/components/ui";
+import {
+  brokerCommissionByMonth,
   brokerDeals,
   brokerKpis,
   brokerTable,
@@ -20,6 +30,7 @@ export default async function PartnerBrokersPage({
   const rows = brokerTable(data);
   const deals = brokerDeals(data);
   const kpis = brokerKpis(data);
+  const monthly = brokerCommissionByMonth(data);
 
   const totalVolume = rows.reduce((s, r) => s + r.volume, 0);
 
@@ -50,6 +61,39 @@ export default async function PartnerBrokersPage({
           value={kpis.avgPoints ? `${kpis.avgPoints.toFixed(2)}%` : "—"}
           hint="Across brokers with a percentage set"
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card
+          title="Commission Owed vs. Volume by Broker"
+          subtitle="Which brokers bring volume efficiently vs. cost more relative to what they source"
+        >
+          {rows.length === 0 ? (
+            <Empty>No partner broker deals yet.</Empty>
+          ) : (
+            <DualBarChart
+              seriesALabel="Volume"
+              seriesBLabel="Owed"
+              rows={rows.map((r) => ({
+                label: r.name,
+                a: r.volume,
+                b: r.totalOwed,
+                aDisplay: compactMoney(r.volume),
+                bDisplay: money(r.totalOwed),
+              }))}
+            />
+          )}
+        </Card>
+
+        <Card title="Commission Owed Over Time" subtitle="Trailing 6 months">
+          <ColumnChart
+            rows={monthly.map((m) => ({
+              label: m.label,
+              value: m.owed,
+              display: money(m.owed),
+            }))}
+          />
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
