@@ -1,10 +1,10 @@
 import {
   BarList,
   Card,
-  ColumnChart,
   DualBarChart,
   Empty,
   KpiCard,
+  LineChart,
   Table,
   Td,
 } from "@/components/ui";
@@ -86,7 +86,7 @@ export default async function PartnerBrokersPage({
         </Card>
 
         <Card title="Commission Owed Over Time" subtitle="Trailing 6 months">
-          <ColumnChart
+          <LineChart
             rows={monthly.map((m) => ({
               label: m.label,
               value: m.owed,
@@ -94,7 +94,6 @@ export default async function PartnerBrokersPage({
             }))}
           />
         </Card>
-      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card
