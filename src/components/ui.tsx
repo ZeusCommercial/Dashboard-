@@ -451,7 +451,92 @@ export function DualBarChart({
     </div>
   );
 }
+export function LineChart({
+  rows,
+  height = 190,
+  color = "#E8A33D",
+}: {
+  rows: { label: string; value: number; display: string }[];
+  height?: number;
+  color?: string;
+}) {
+  const values = rows.map((r) => (Number.isFinite(r.value) ? r.value : 0));
+  const max = Math.max(...values, 1);
 
+  if (!rows.length) {
+    return (
+      <div
+        className="flex items-center justify-center text-[13px] text-muted"
+        style={{ height }}
+      >
+        No data for this selection
+      </div>
+    );
+  }
+
+  const plotH = height - 26;
+  const slot = rows.length > 1 ? 100 / (rows.length - 1) : 0;
+
+  const coords = rows.map((r, i) => ({
+    x: rows.length > 1 ? slot * i : 50,
+    y: plotH - (r.value / max) * plotH * 0.85,
+  }));
+
+  const points = coords.map((c) => `${c.x},${c.y}`).join(" ");
+
+  return (
+    <div>
+      <div className="relative" style={{ height: plotH }}>
+        {[0.25, 0.5, 0.75, 1].map((t) => (
+          <div
+            key={t}
+            className="absolute inset-x-0 border-t border-hairline/40"
+            style={{ bottom: `${t * 100}%` }}
+          />
+        ))}
+
+        <svg
+          className="absolute inset-0 h-full w-full overflow-visible"
+          viewBox={`0 0 100 ${plotH}`}
+          preserveAspectRatio="none"
+        >
+          <polyline
+            points={points}
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+          />
+          {coords.map((c, i) => (
+            <circle
+              key={i}
+              cx={c.x}
+              cy={c.y}
+              r="3"
+              fill={color}
+              vectorEffect="non-scaling-stroke"
+            >
+              <title>
+                {rows[i].label}: {rows[i].display}
+              </title>
+            </circle>
+          ))}
+        </svg>
+      </div>
+
+      <div className="mt-2 flex">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="flex-1 text-center text-[11px] uppercase tracking-wide text-muted/70"
+          >
+            {r.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 export function Table({
   head,
   children,
