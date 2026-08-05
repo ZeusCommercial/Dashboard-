@@ -8,8 +8,11 @@ import {
   Table,
   Td,
 } from "@/components/ui";
+import GranularityToggle from "@/components/GranularityToggle";
 import {
+  brokerCommissionByDay,
   brokerCommissionByMonth,
+  brokerCommissionByWeek,
   brokerDeals,
   brokerKpis,
   brokerTable,
@@ -24,13 +27,30 @@ export const dynamic = "force-dynamic";
 export default async function PartnerBrokersPage({
   searchParams,
 }: {
-  searchParams: { pipeline?: string };
+  searchParams: { pipeline?: string; gran?: string };
 }) {
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const rows = brokerTable(data);
   const deals = brokerDeals(data);
   const kpis = brokerKpis(data);
-  const monthly = brokerCommissionByMonth(data);
+
+  const gran = searchParams.gran === "daily" || searchParams.gran === "weekly"
+    ? searchParams.gran
+    : "monthly";
+
+  const trend =
+    gran === "daily"
+      ? brokerCommissionByDay(data, 14)
+      : gran === "weekly"
+        ? brokerCommissionByWeek(data, 12)
+        : brokerCommissionByMonth(data, 6);
+
+  const trendSubtitle =
+    gran === "daily"
+      ? "Trailing 14 days"
+      : gran === "weekly"
+        ? "Trailing 12 weeks"
+        : "Trailing 6 months";
 
   const totalVolume = rows.reduce((s, r) => s + r.volume, 0);
 
@@ -85,12 +105,16 @@ export default async function PartnerBrokersPage({
           )}
         </Card>
 
-        <Card title="Commission Owed Over Time" subtitle="Trailing 6 months">
+        <Card
+          title="Commission Owed Over Time"
+          subtitle={trendSubtitle}
+          action={<GranularityToggle />}
+        >
           <LineChart
-            rows={monthly.map((m) => ({
-              label: m.label,
-              value: m.owed,
-              display: money(m.owed),
+            rows={trend.map((t) => ({
+              label: t.label,
+              value: t.owed,
+              display: money(t.owed),
             }))}
           />
         </Card>
