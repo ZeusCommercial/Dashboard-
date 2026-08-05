@@ -650,6 +650,119 @@ export function brokerCommissionByMonth(d: Dataset, n = 6): BrokerMonthlyRow[] {
   }));
 }
 
+function dayKeyOf(input: string | Date | null | undefined): string | null {
+  if (!input) return null;
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+}
+
+export type DayBucket = { key: string; label: string; full: string };
+
+export function trailingDays(n = 14): DayBucket[] {
+  const now = new Date();
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() - (n - 1 - i));
+    const key = d.toISOString().slice(0, 10);
+    return {
+      key,
+      label: d.toLocaleString("en-US", { month: "short", day: "numeric" }),
+      full: d.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    };
+  });
+}
+
+export type BrokerDailyRow = DayBucket & { owed: number; deals: number };
+
+export function brokerCommissionByDay(d: Dataset, n = 14): BrokerDailyRow[] {
+  const buckets = new Map<string, { owed: number; deals: number }>();
+
+  for (const deal of brokerDeals(d)) {
+    const k = dayKeyOf(deal.updatedAt);
+    if (!k) continue;
+    const b = buckets.get(k) ?? { owed: 0, deals: 0 };
+    b.owed += deal.commissionOwed || 0;
+    b.deals += 1;
+    buckets.set(k, b);
+  }
+
+  return trailingDays(n).map((day) => ({
+    ...day,
+    owed: buckets.get(day.key)?.owed ?? 0,
+    deals: buckets.get(day.key)?.deals ?? 0,
+  }));
+}
+
+export type WeekBucket = { key: string; label: string; full: string };
+
+export function trailingWeeks(n = 12): WeekBucket[] {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() - ((day + 6) % 7));
+
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(monday);
+    d.setUTCDate(monday.getUTCDate() - (n - 1 - i) * 7);
+    const key = d.toISOString().slice(0, 10);
+    return {
+      key,
+      label: key.slice(5),
+      full: d.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    };
+  });
+}
+
+export type BrokerWeeklyRow = WeekBucket & { owed: number; deals: number };
+
+export function brokerCommissionByWeek(d: Dataset, n = 12): BrokerWeeklyRow[] {
+  const buckets = new Map<string, { owed: number; deals: number }>();
+
+  for (const deal of brokerDeals(d)) {
+    const k = weekKey(deal.updatedAt);
+    const b = buckets.get(k) ?? { owed: 0, deals: 0 };
+    b.owed += deal.commissionOwed || 0;
+    b.deals += 1;
+    buckets.set(k, b);
+  }
+
+  return trailingWeeks(n).map((w) => ({
+    ...w,
+    owed: buckets.get(w.key)?.owed ?? 0,
+    deals: buckets.get(w.key)?.deals ?? 0,
+  }));
+}
+
+export type BrokerMonthlyRow = MonthBucket & { owed: number; deals: number };
+
+export function brokerCommissionByMonth(d: Dataset, n = 6): BrokerMonthlyRow[] {
+  const buckets = new Map<string, { owed: number; deals: number }>();
+
+  for (const deal of brokerDeals(d)) {
+    const k = monthKeyOf(deal.updatedAt);
+    if (!k) continue;
+    const b = buckets.get(k) ?? { owed: 0, deals: 0 };
+    b.owed += deal.commissionOwed || 0;
+    b.deals += 1;
+    buckets.set(k, b);
+  }
+
+  return trailingMonths(n).map((m) => ({
+    ...m,
+    owed: buckets.get(m.key)?.owed ?? 0,
+    deals: buckets.get(m.key)?.deals ?? 0,
+  }));
+}
+
 export const PAID_PARTNER_TAG = "paid partner";
 
 export function paidPartnerCount(d: Dataset): number {
