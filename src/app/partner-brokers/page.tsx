@@ -94,8 +94,9 @@ export default async function PartnerBrokersPage({
             }))}
           />
         </Card>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">>
         <Card
           title="Commission Owed by Broker"
           subtitle={`${rows.length} broker${rows.length === 1 ? "" : "s"}`}
