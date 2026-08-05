@@ -499,7 +499,7 @@ export type ApprovalRow = {
  * denominator reflects everything that actually got underwritten.
  */
 export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
-  const buckets = new Map<
+  const buckets = new Map
     string,
     { submitted: number; approved: number; declined: number }
   >();
@@ -537,6 +537,7 @@ export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
     };
   });
 }
+
 export type BrokerDeal = MockDeal & {
   brokerName: string;
   brokerPoints: number | null;
@@ -560,7 +561,7 @@ export type BrokerRow = {
 };
 
 export function brokerTable(d: Dataset): BrokerRow[] {
-  const map = new Map<
+  const map = new Map
     string,
     {
       deals: number;
@@ -627,27 +628,6 @@ export function brokerKpis(d: Dataset): BrokerKpis {
     : 0;
 
   return { totalOwed, activeBrokers: rows.length, brokerVolume, avgPoints };
-}
-
-export type BrokerMonthlyRow = MonthBucket & { owed: number; deals: number };
-
-export function brokerCommissionByMonth(d: Dataset, n = 6): BrokerMonthlyRow[] {
-  const buckets = new Map<string, { owed: number; deals: number }>();
-
-  for (const deal of brokerDeals(d)) {
-    const k = monthKeyOf(deal.updatedAt);
-    if (!k) continue;
-    const b = buckets.get(k) ?? { owed: 0, deals: 0 };
-    b.owed += deal.commissionOwed || 0;
-    b.deals += 1;
-    buckets.set(k, b);
-  }
-
-  return trailingMonths(n).map((m) => ({
-    ...m,
-    owed: buckets.get(m.key)?.owed ?? 0,
-    deals: buckets.get(m.key)?.deals ?? 0,
-  }));
 }
 
 function dayKeyOf(input: string | Date | null | undefined): string | null {
