@@ -451,14 +451,33 @@ export function DualBarChart({
     </div>
   );
 }
+function smoothPath(coords: { x: number; y: number }[]): string {
+  if (coords.length < 2) return "";
+  let d = `M ${coords[0].x},${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[i - 1] ?? coords[i];
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const p3 = coords[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+
 export function LineChart({
   rows,
   height = 190,
   color = "#E8A33D",
+  area = true,
 }: {
   rows: { label: string; value: number; display: string }[];
   height?: number;
   color?: string;
+  area?: boolean;
 }) {
   const values = rows.map((r) => (Number.isFinite(r.value) ? r.value : 0));
   const max = Math.max(...values, 1);
@@ -476,13 +495,20 @@ export function LineChart({
 
   const plotH = height - 26;
   const slot = rows.length > 1 ? 100 / (rows.length - 1) : 0;
+  const gradientId = `line-fill-${color.replace("#", "")}`;
 
   const coords = rows.map((r, i) => ({
     x: rows.length > 1 ? slot * i : 50,
     y: plotH - (r.value / max) * plotH * 0.85,
   }));
 
-  const points = coords.map((c) => `${c.x},${c.y}`).join(" ");
+  const linePath = smoothPath(coords);
+  const areaPath =
+    coords.length > 1
+      ? `${linePath} L ${coords[coords.length - 1].x},${plotH} L ${coords[0].x},${plotH} Z`
+      : "";
+
+  const labelStride = Math.max(1, Math.ceil(rows.length / 8));
 
   return (
     <div>
@@ -500,8 +526,17 @@ export function LineChart({
           viewBox={`0 0 100 ${plotH}`}
           preserveAspectRatio="none"
         >
-          <polyline
-            points={points}
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {area && coords.length > 1 && (
+            <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
+          )}
+          <path
+            d={linePath}
             fill="none"
             stroke={color}
             strokeWidth="2"
@@ -512,7 +547,7 @@ export function LineChart({
               key={i}
               cx={c.x}
               cy={c.y}
-              r="3"
+              r="2.5"
               fill={color}
               vectorEffect="non-scaling-stroke"
             >
@@ -525,12 +560,12 @@ export function LineChart({
       </div>
 
       <div className="mt-2 flex">
-        {rows.map((r) => (
+        {rows.map((r, i) => (
           <div
-            key={r.label}
+            key={`${r.label}-${i}`}
             className="flex-1 text-center text-[11px] uppercase tracking-wide text-muted/70"
           >
-            {r.label}
+            {i % labelStride === 0 || i === rows.length - 1 ? r.label : ""}
           </div>
         ))}
       </div>
