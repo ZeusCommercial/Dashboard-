@@ -537,6 +537,11 @@ export function approvalTrendByMonth(d: Dataset, n = 6): ApprovalRow[] {
     };
   });
 }
+// ─────────────────────────────────────────────────────────────────────────
+// Partner Brokers — manual, points-based brokers (e.g. Stephan) tracked
+// directly on the Opportunity via Broker Name / Broker Points / Commission
+// Owed, rather than through the tiered Affiliate registry.
+// ─────────────────────────────────────────────────────────────────────────
 
 export type BrokerDeal = MockDeal & {
   brokerName: string;
@@ -544,6 +549,7 @@ export type BrokerDeal = MockDeal & {
   commissionOwed: number | null;
 };
 
+/** Every deal that has a Broker Name set, regardless of stage. */
 export function brokerDeals(d: Dataset): BrokerDeal[] {
   return d.deals.filter(
     (x): x is BrokerDeal => !!(x as { brokerName?: string | null }).brokerName
@@ -560,8 +566,9 @@ export type BrokerRow = {
   avgPoints: number;
 };
 
+/** Rolls broker-tagged deals up per broker, sorted by funded volume. */
 export function brokerTable(d: Dataset): BrokerRow[] {
-  const map = new Map
+  const map = new Map<
     string,
     {
       deals: number;
@@ -627,7 +634,12 @@ export function brokerKpis(d: Dataset): BrokerKpis {
     ? pointsRows.reduce((s, r) => s + r.avgPoints, 0) / pointsRows.length
     : 0;
 
-  return { totalOwed, activeBrokers: rows.length, brokerVolume, avgPoints };
+  return {
+    totalOwed,
+    activeBrokers: rows.length,
+    brokerVolume,
+    avgPoints,
+  };
 }
 
 function dayKeyOf(input: string | Date | null | undefined): string | null {
@@ -659,6 +671,7 @@ export function trailingDays(n = 14): DayBucket[] {
 
 export type BrokerDailyRow = DayBucket & { owed: number; deals: number };
 
+/** Commission owed per day, trailing N days — for the "Daily" chart view. */
 export function brokerCommissionByDay(d: Dataset, n = 14): BrokerDailyRow[] {
   const buckets = new Map<string, { owed: number; deals: number }>();
 
@@ -704,6 +717,7 @@ export function trailingWeeks(n = 12): WeekBucket[] {
 
 export type BrokerWeeklyRow = WeekBucket & { owed: number; deals: number };
 
+/** Commission owed per week, trailing N weeks — for the "Weekly" chart view. */
 export function brokerCommissionByWeek(d: Dataset, n = 12): BrokerWeeklyRow[] {
   const buckets = new Map<string, { owed: number; deals: number }>();
 
@@ -724,6 +738,7 @@ export function brokerCommissionByWeek(d: Dataset, n = 12): BrokerWeeklyRow[] {
 
 export type BrokerMonthlyRow = MonthBucket & { owed: number; deals: number };
 
+/** Commission owed accrued per month, based on when the broker deal last updated. */
 export function brokerCommissionByMonth(d: Dataset, n = 6): BrokerMonthlyRow[] {
   const buckets = new Map<string, { owed: number; deals: number }>();
 
