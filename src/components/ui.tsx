@@ -451,8 +451,10 @@ export function DualBarChart({
     </div>
   );
 }
-function smoothPath(coords: { x: number; y: number }[]): string {
+function smoothPath(coords: { x: number; y: number }[], maxY?: number): string {
   if (coords.length < 2) return "";
+  const clamp = (y: number) => (maxY !== undefined ? Math.min(y, maxY) : y);
+
   let d = `M ${coords[0].x},${coords[0].y}`;
   for (let i = 0; i < coords.length - 1; i++) {
     const p0 = coords[i - 1] ?? coords[i];
@@ -460,9 +462,9 @@ function smoothPath(coords: { x: number; y: number }[]): string {
     const p2 = coords[i + 1];
     const p3 = coords[i + 2] ?? p2;
     const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp1y = clamp(p1.y + (p2.y - p0.y) / 6);
     const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    const cp2y = clamp(p2.y - (p3.y - p1.y) / 6);
     d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
   }
   return d;
@@ -513,7 +515,7 @@ export function LineChart({
     y: plotH - (r.value / max) * plotH * 0.85,
   }));
 
-  const linePath = smoothPath(coords);
+  const linePath = smoothPath(coords, plotH);
   const areaPath =
     coords.length > 1
       ? `${linePath} L ${coords[coords.length - 1].x},${plotH} L ${coords[0].x},${plotH} Z`
