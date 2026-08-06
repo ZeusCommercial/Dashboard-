@@ -580,7 +580,7 @@ export function LineChart({
                 <circle
                   cx={c.x}
                   cy={c.y}
-                  r="6"
+                  r="1.5"
                   fill="transparent"
                   vectorEffect="non-scaling-stroke"
                 >
