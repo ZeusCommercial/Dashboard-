@@ -569,18 +569,27 @@ export function LineChart({
               vectorEffect="non-scaling-stroke"
             />
             {coords.map((c, i) => (
-              <circle
-                key={i}
-                cx={c.x}
-                cy={c.y}
-                r="1"
-                fill={color}
-                vectorEffect="non-scaling-stroke"
-              >
-                <title>
-                  {rows[i].label}: {rows[i].display}
-                </title>
-              </circle>
+              <g key={i}>
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r="1.5"
+                  fill={color}
+                  vectorEffect="non-scaling-stroke"
+                />
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r="6"
+                  fill="transparent"
+                  vectorEffect="non-scaling-stroke"
+                >
+                  <title>
+                    {rows[i].label}: {rows[i].display}
+                  </title>
+                </circle>
+              </g>
+            ))}
             ))}
           </svg>
         </div>
