@@ -473,14 +473,23 @@ export function LineChart({
   height = 190,
   color = "#E8A33D",
   area = true,
+  formatValue,
 }: {
   rows: { label: string; value: number; display: string }[];
   height?: number;
   color?: string;
   area?: boolean;
+  formatValue?: (n: number) => string;
 }) {
   const values = rows.map((r) => (Number.isFinite(r.value) ? r.value : 0));
   const max = Math.max(...values, 1);
+  const fmt =
+    formatValue ??
+    ((n: number) => {
+      if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+      if (Math.abs(n) >= 1_000) return `${Math.round(n / 1000)}K`;
+      return `${Math.round(n)}`;
+    });
 
   if (!rows.length) {
     return (
@@ -497,6 +506,8 @@ export function LineChart({
   const slot = rows.length > 1 ? 100 / (rows.length - 1) : 0;
   const gradientId = `line-fill-${color.replace("#", "")}`;
 
+  const ticks = [1, 0.75, 0.5, 0.25, 0];
+
   const coords = rows.map((r, i) => ({
     x: rows.length > 1 ? slot * i : 50,
     y: plotH - (r.value / max) * plotH * 0.85,
@@ -512,54 +523,68 @@ export function LineChart({
 
   return (
     <div>
-      <div className="relative" style={{ height: plotH }}>
-        {[0.25, 0.5, 0.75, 1].map((t) => (
-          <div
-            key={t}
-            className="absolute inset-x-0 border-t border-hairline/40"
-            style={{ bottom: `${t * 100}%` }}
-          />
-        ))}
-
-        <svg
-          className="absolute inset-0 h-full w-full overflow-visible"
-          viewBox={`0 0 100 ${plotH}`}
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={color} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {area && coords.length > 1 && (
-            <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
-          )}
-          <path
-            d={linePath}
-            fill="none"
-            stroke={color}
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-          />
-          {coords.map((c, i) => (
-            <circle
-              key={i}
-              cx={c.x}
-              cy={c.y}
-              r="2.5"
-              fill={color}
-              vectorEffect="non-scaling-stroke"
+      <div className="flex gap-2">
+        <div className="relative w-10 shrink-0" style={{ height: plotH }}>
+          {ticks.map((t) => (
+            <span
+              key={t}
+              className="tnum absolute right-1 -translate-y-1/2 text-[10px] text-muted/70"
+              style={{ bottom: `${t * 85}%` }}
             >
-              <title>
-                {rows[i].label}: {rows[i].display}
-              </title>
-            </circle>
+              {fmt(max * t)}
+            </span>
           ))}
-        </svg>
+        </div>
+
+        <div className="relative flex-1" style={{ height: plotH }}>
+          {ticks.map((t) => (
+            <div
+              key={t}
+              className="absolute inset-x-0 border-t border-hairline/40"
+              style={{ bottom: `${t * 85}%` }}
+            />
+          ))}
+
+          <svg
+            className="absolute inset-0 h-full w-full overflow-visible"
+            viewBox={`0 0 100 ${plotH}`}
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+                <stop offset="100%" stopColor={color} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {area && coords.length > 1 && (
+              <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
+            )}
+            <path
+              d={linePath}
+              fill="none"
+              stroke={color}
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+            />
+            {coords.map((c, i) => (
+              <circle
+                key={i}
+                cx={c.x}
+                cy={c.y}
+                r="1"
+                fill={color}
+                vectorEffect="non-scaling-stroke"
+              >
+                <title>
+                  {rows[i].label}: {rows[i].display}
+                </title>
+              </circle>
+            ))}
+          </svg>
+        </div>
       </div>
 
-      <div className="mt-2 flex">
+      <div className="mt-2 flex pl-12">
         {rows.map((r, i) => (
           <div
             key={`${r.label}-${i}`}
