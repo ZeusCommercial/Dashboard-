@@ -584,7 +584,6 @@ export function LineChart({
               }}
             />
           ))}
-          </svg>
         </div>
       </div>
 
