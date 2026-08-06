@@ -116,6 +116,7 @@ export default async function PartnerBrokersPage({
               value: t.owed,
               display: money(t.owed),
             }))}
+            formatValue={compactMoney}
           />
         </Card>
       </div>
