@@ -19,7 +19,7 @@ export default function GranularityToggle({
   const current = params.get(paramKey) ?? defaultValue;
 
   return (
-    <div className="inline-flex rounded-lg border border-hairline bg-ink p-0.5">
+    <div className="inline-flex rounded-lg bg-[#12294B] p-0.5">
       {OPTIONS.map((o) => (
         <button
           key={o.value}
