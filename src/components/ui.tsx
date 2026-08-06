@@ -590,7 +590,6 @@ export function LineChart({
                 </circle>
               </g>
             ))}
-            ))}
           </svg>
         </div>
       </div>
