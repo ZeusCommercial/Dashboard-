@@ -566,22 +566,24 @@ export function LineChart({
               fill="none"
               stroke={color}
               strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
             />
-            {coords.map((c, i) => (
-              <circle
-                key={i}
-                cx={c.x}
-                cy={c.y}
-                r="6"
-                fill="transparent"
-                vectorEffect="non-scaling-stroke"
-              >
-                <title>
-                  {rows[i].label}: {rows[i].display}
-                </title>
-              </circle>
-            ))}
+          </svg>
+
+          {coords.map((c, i) => (
+            <div
+              key={i}
+              title={`${rows[i].label}: ${rows[i].display}`}
+              className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+              style={{
+                left: `${c.x}%`,
+                top: `${(c.y / plotH) * 100}%`,
+                backgroundColor: color,
+              }}
+            />
+          ))}
           </svg>
         </div>
       </div>
