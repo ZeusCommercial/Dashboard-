@@ -141,6 +141,7 @@ export type MockContact = {
   id: string;
   createdAt: string;
   firstCallAt: string | null;
+  tags?: string[];
 };
 
 export function mockContacts(count = 640): MockContact[] {
