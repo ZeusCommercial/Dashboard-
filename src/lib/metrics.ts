@@ -67,7 +67,7 @@ export async function loadDataset(opts: {
       deals: mockDeals(),
       contacts: mockContacts(),
       partnerContacts: [],
-      calls: mockCalls(),,
+      calls: mockCalls(),
       affiliates: MOCK_AFFILIATES,
       isMock: true,
       generatedAt: new Date().toISOString(),
@@ -77,7 +77,6 @@ export async function loadDataset(opts: {
   }
 
   const live = await loadLiveDataset(opts);
-  return {
   return {
     deals: live.deals,
     contacts: live.contacts,
@@ -276,7 +275,7 @@ export function dealSizeDistribution(
     (x) =>
       isFundedStage(x.stage) &&
       (!opts.attributedOnly || x.affiliateId !== UNATTRIBUTED_ID)
-  );;
+  );
   return TIER_1_BANDS.map((band) => {
     const inBand = funded.filter(
       (x) => x.amount >= band.min && x.amount < band.max
@@ -389,7 +388,7 @@ export function commissionTable(
     ? out
     : out.filter((r) => r.affiliateId !== UNATTRIBUTED_ID);
 }
-}
+
 
 type Person = {
   ids: string[];
