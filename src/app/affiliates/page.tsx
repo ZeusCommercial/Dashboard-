@@ -28,7 +28,11 @@ export default async function AffiliatesPage({
   const data = await loadDataset({ pipelineId: searchParams.pipeline || null });
   const totals = commissionTable(data);
   const tree = affiliateTree(data);
+
+  // Table shows every funded deal — an unattributed deal is still a real deal.
   const dist = dealSizeDistribution(data);
+  // Payout KPI only counts deals a partner can actually be paid for.
+  const payoutDist = dealSizeDistribution(data, { attributedOnly: true });
 
   const totalOwed = totals.reduce((s, r) => s + r.totalEarnings, 0);
   const totalOverrides = totals.reduce((s, r) => s + r.overrideEarnings, 0);
@@ -38,7 +42,7 @@ export default async function AffiliatesPage({
 
   // Tier 1 payouts are a pure function of funded amount bands, so they're
   // derived from the distribution rather than the per-affiliate rollup.
-  const tier1Payout = dist.reduce((s, d) => s + d.count * d.payout, 0);
+  const tier1Payout = payoutDist.reduce((s, d) => s + d.count * d.payout, 0);
   const bandVolume = dist.reduce((s, d) => s + d.volume, 0);
   const bandDeals = dist.reduce((s, d) => s + d.count, 0);
 
