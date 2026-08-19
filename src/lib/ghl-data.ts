@@ -183,6 +183,8 @@ function isFundedStageName(name: string | undefined): boolean {
 export type LiveDataset = {
   deals: MockDeal[];
   contacts: MockContact[];
+  /** Contacts tagged as partners — excluded from `contacts` (leads). */
+  partnerContacts: MockContact[];
   calls: MockCall[];
   affiliates: MockAffiliate[];
   isMock: boolean;
