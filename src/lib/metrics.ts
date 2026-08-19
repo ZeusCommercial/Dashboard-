@@ -1,4 +1,10 @@
-import { rollup, type DealRow, type Tier, TIER_1_BANDS } from "./commission";
+import {
+  rollup,
+  UNATTRIBUTED_ID,
+  type DealRow,
+  type Tier,
+  TIER_1_BANDS,
+} from "./commission";
 import {
   MOCK_AFFILIATES,
   mockCalls,
@@ -258,8 +264,15 @@ function weekKey(iso: string): string {
   return monday.toISOString().slice(0, 10);
 }
 
-export function dealSizeDistribution(d: Dataset) {
-  const funded = d.deals.filter((x) => isFundedStage(x.stage));
+export function dealSizeDistribution(
+  d: Dataset,
+  opts: { attributedOnly?: boolean } = {}
+) {
+  const funded = d.deals.filter(
+    (x) =>
+      isFundedStage(x.stage) &&
+      (!opts.attributedOnly || x.affiliateId !== UNATTRIBUTED_ID)
+  );;
   return TIER_1_BANDS.map((band) => {
     const inBand = funded.filter(
       (x) => x.amount >= band.min && x.amount < band.max
@@ -341,7 +354,10 @@ export function callVolumeByWeek(d: Dataset) {
     .map(([k, v]) => ({ week: k.slice(5), ...v }));
 }
 
-export function commissionTable(d: Dataset) {
+export function commissionTable(
+  d: Dataset,
+  opts: { includeUnattributed?: boolean } = {}
+) {set) {
   const directory = new Map(
     d.affiliates.map((a) => [
       a.id,
@@ -364,7 +380,11 @@ export function commissionTable(d: Dataset) {
       };
     });
 
-  return rollup(rows, directory);
+    const out = rollup(rows, directory);
+  return opts.includeUnattributed
+    ? out
+    : out.filter((r) => r.affiliateId !== UNATTRIBUTED_ID);
+}
 }
 
 type Person = {
@@ -378,8 +398,9 @@ export function affiliateTree(d: Dataset) {
   const totals = commissionTable(d);
   const byId = new Map(totals.map((t) => [t.affiliateId, t]));
 
-  const people = new Map<string, Person>();
+    const people = new Map<string, Person>();
   for (const a of d.affiliates) {
+    if (a.id === UNATTRIBUTED_ID) continue;
     const key = a.name;
     const existing = people.get(key);
     if (existing) {
