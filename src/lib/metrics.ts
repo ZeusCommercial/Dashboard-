@@ -50,6 +50,7 @@ export function duration(sec: number): string {
 export type Dataset = {
   deals: MockDeal[];
   contacts: MockContact[];
+  partnerContacts: MockContact[];
   calls: MockCall[];
   affiliates: typeof MOCK_AFFILIATES;
   isMock: boolean;
@@ -65,7 +66,8 @@ export async function loadDataset(opts: {
     return {
       deals: mockDeals(),
       contacts: mockContacts(),
-      calls: mockCalls(),
+      partnerContacts: [],
+      calls: mockCalls(),,
       affiliates: MOCK_AFFILIATES,
       isMock: true,
       generatedAt: new Date().toISOString(),
@@ -76,8 +78,10 @@ export async function loadDataset(opts: {
 
   const live = await loadLiveDataset(opts);
   return {
+  return {
     deals: live.deals,
     contacts: live.contacts,
+    partnerContacts: live.partnerContacts,
     calls: live.calls,
     affiliates: live.affiliates,
     isMock: false,
@@ -782,9 +786,7 @@ export function brokerCommissionByMonth(d: Dataset, n = 6): BrokerMonthlyRow[] {
 export const PAID_PARTNER_TAG = "paid partner";
 
 export function paidPartnerCount(d: Dataset): number {
-  return d.contacts.filter((c) =>
-    ((c as { tags?: string[] }).tags ?? [])
-      .map((t) => t.toLowerCase())
-      .includes(PAID_PARTNER_TAG)
+  return [...d.contacts, ...d.partnerContacts].filter((c) =>
+    (c.tags ?? []).map((t) => t.toLowerCase()).includes(PAID_PARTNER_TAG)
   ).length;
 }
