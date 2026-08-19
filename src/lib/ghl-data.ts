@@ -292,6 +292,17 @@ export async function loadLiveDataset(opts: {
       tags: c.tags ?? [],
     }));
 
+  const partnerContacts: MockContact[] = contacts
+    .filter((c) =>
+      (c.tags ?? []).map((t) => t.toLowerCase()).includes(PARTNER_TAG)
+    )
+    .map((c) => ({
+      id: c.id,
+      createdAt: c.dateAdded ?? new Date().toISOString(),
+      firstCallAt: firstCallByContact.get(c.id) ?? null,
+      tags: c.tags ?? [],
+    }));
+
   // Include unattributed as a synthetic affiliate so those deals still appear
   // in totals rather than silently disappearing.
     const affiliatesWithUnattributed: MockAffiliate[] = [
@@ -301,6 +312,7 @@ export async function loadLiveDataset(opts: {
   return {
     deals,
     contacts: leadContacts,
+    partnerContacts,
     calls,
     affiliates: affiliatesWithUnattributed,
     isMock: false,
