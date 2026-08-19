@@ -1,5 +1,8 @@
 export type Tier = "TIER_1" | "TIER_2";
 
+/** Synthetic affiliate id stamped on funded deals with no Recruited By value. */
+export const UNATTRIBUTED_ID = "unattributed";
+
 export const UPLINE_OVERRIDE_USD = 100;
 
 export const TIER_1_BANDS = [
