@@ -25,7 +25,7 @@ import {
   type GhlContact,
   type GhlOpportunity,
 } from "./ghl";
-import type { Tier } from "./commission";
+import { UNATTRIBUTED_ID, type Tier } from "./commission";
 import type { MockCall, MockContact, MockDeal, MockAffiliate } from "./mock";
 import { FIELD_IDS } from "@/config/ghl-mapping";
 
@@ -242,7 +242,7 @@ export async function loadLiveDataset(opts: {
       name: o.name ?? "Untitled Deal",
       amount: Number(o.monetaryValue ?? 0),
       stage: isFundedStageName(stageName) ? "Funded" : stageName,
-      affiliateId: affiliateId ?? "unattributed",
+      affiliateId: affiliateId ?? UNATTRIBUTED_ID,
       contactId: o.contactId ?? null,
       stagePosition: stageIdToPosition.get(o.pipelineStageId ?? "") ?? 999,
       pipelineId: o.pipelineId ?? null,
@@ -292,11 +292,10 @@ export async function loadLiveDataset(opts: {
 
   // Include unattributed as a synthetic affiliate so those deals still appear
   // in totals rather than silently disappearing.
-  const affiliatesWithUnattributed: MockAffiliate[] = [
+    const affiliatesWithUnattributed: MockAffiliate[] = [
     ...affiliates,
-    { id: "unattributed", name: "Direct / No Partner", tier: "TIER_1", uplineId: null },
+    { id: UNATTRIBUTED_ID, name: "Direct / No Partner", tier: "TIER_1", uplineId: null },
   ];
-
   return {
     deals,
     contacts: leadContacts,
