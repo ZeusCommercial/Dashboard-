@@ -30,7 +30,7 @@ export default async function AffiliatesPage({
   const tree = affiliateTree(data);
 
   // Table shows every funded deal — an unattributed deal is still a real deal.
-  const dist = dealSizeDistribution(data);
+  const dist = dealSizeDistribution(data, { attributedOnly: true });
   // Payout KPI only counts deals a partner can actually be paid for.
   const payoutDist = dealSizeDistribution(data, { attributedOnly: true });
 
