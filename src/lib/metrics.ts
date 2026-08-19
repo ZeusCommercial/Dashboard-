@@ -361,7 +361,7 @@ export function callVolumeByWeek(d: Dataset) {
 export function commissionTable(
   d: Dataset,
   opts: { includeUnattributed?: boolean } = {}
-) {set) {
+) {
   const directory = new Map(
     d.affiliates.map((a) => [
       a.id,
