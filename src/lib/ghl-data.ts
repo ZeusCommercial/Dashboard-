@@ -255,6 +255,7 @@ export async function loadLiveDataset(opts: {
       brokerName: brokerNameRaw || null,
       brokerPoints: brokerPointsRaw !== null ? Number(brokerPointsRaw) : null,
       commissionOwed: commissionOwedRaw !== null ? Number(commissionOwedRaw) : null,
+      status: o.status ?? null,
     };
   });
 
