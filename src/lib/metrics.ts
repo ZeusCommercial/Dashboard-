@@ -139,11 +139,13 @@ export function overviewKpis(d: Dataset): Kpi[] {
       ? (thisMonthFunded - prevMonthFunded) / prevMonthFunded
       : null;
 
-  const openDeals = d.deals.filter((x) => !isFundedStage(x.stage));
+  const openDeals = d.deals.filter(
+    (x) => !isFundedStage(x.stage) && !isLostOrAbandoned(x.status)
+  );
   const pipelineValue = openDeals.reduce((s, x) => s + x.amount, 0);
 
-  const commissionRows = commissionTable(d);
-  const owed = commissionRows.reduce((s, r) => s + r.totalEarnings, 0);
+  const lostAbandoned = d.deals.filter((x) => isLostOrAbandoned(x.status));
+  const lostAbandonedValue = lostAbandoned.reduce((s, x) => s + x.amount, 0);
 
   const avgDeal = funded.length ? totalFunded / funded.length : 0;
 
@@ -161,10 +163,10 @@ export function overviewKpis(d: Dataset): Kpi[] {
       hint: `${openDeals.length} active deals`,
     },
     {
-      label: "Commissions Owed",
-      value: money(owed),
+      label: "Lost / Abandoned",
+      value: compactMoney(lostAbandonedValue),
       delta: null,
-      hint: "Includes $100 overrides",
+      hint: `${lostAbandoned.length} deals`,
     },
     {
       label: "Avg Deal Size",
@@ -198,6 +200,7 @@ export function pipelineByStage(d: Dataset) {
  const map = new Map<string, { count: number; value: number; position: number }>();
 
   d.deals.forEach((deal, i) => {
+    if (isLostOrAbandoned(deal.status)) return;
     const stage = deal.stage ?? "Unassigned";
     const cur = map.get(stage) ?? {
       count: 0,
@@ -300,7 +303,7 @@ export function dealSizeDistribution(
 export function staleDeals(d: Dataset, thresholdDays = 21) {
   const now = Date.now();
   return d.deals
-    .filter((x) => !isFundedStage(x.stage))
+    .filter((x) => !isFundedStage(x.stage) && !isLostOrAbandoned(x.status))
     .map((x) => ({
       ...x,
       idleDays: Math.floor((now - new Date(x.updatedAt).getTime()) / 86_400_000),
