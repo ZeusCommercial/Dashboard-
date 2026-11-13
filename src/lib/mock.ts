@@ -80,6 +80,8 @@ export type MockDeal = {
   brokerName?: string | null;
   brokerPoints?: number | null;
   commissionOwed?: number | null;
+  /** Raw GHL opportunity status (open/won/lost/abandoned), when known. */
+  status?: string | null;
 };
 
 function daysAgo(n: number): string {
