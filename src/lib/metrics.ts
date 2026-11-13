@@ -19,8 +19,16 @@ import { hasLiveCredentials, loadLiveDataset } from "./ghl-data";
 export const FUNDED_STAGE = "Funded";
 
 /** Matches "Funded", "funded / closed", "Funded/Closed", etc. */
+/** Matches "Funded", "funded / closed", "Funded/Closed", etc. */
 export function isFundedStage(stage: string): boolean {
   return (stage ?? "").toLowerCase().includes("funded");
+}
+
+/** True for GHL opportunity status "lost" or "abandoned" — dead deals that
+ *  GHL's own board hides by default, so we keep them out of active totals. */
+export function isLostOrAbandoned(status: string | null | undefined): boolean {
+  const s = (status ?? "").toLowerCase();
+  return s === "lost" || s === "abandoned";
 }
 
 export function money(n: number): string {
